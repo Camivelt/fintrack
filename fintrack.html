@@ -1030,23 +1030,43 @@ function toggleArchived(){
 }
 
 function restoreBaseCats(){
-  // Detecta cuáles base faltan o están archivadas
+  // Detecta cuáles base faltan, están archivadas, o tienen duplicados con label similar
   const existingKeys=CATS.map(c=>c.key);
   const missing=SEED_CATS.filter(s=>!existingKeys.includes(s.key));
   const archivedBase=CATS.filter(c=>c.archived&&SEED_CATS.find(s=>s.key===c.key));
-  if(missing.length===0&&archivedBase.length===0){
+  // Detectar duplicados: categorías con label similar a una base pero key diferente
+  const norm=s=>(s||'').toLowerCase().trim().replace(/\s+/g,' ');
+  const duplicates=[];
+  CATS.forEach(c=>{
+    const baseMatch=SEED_CATS.find(s=>norm(s.label).includes(norm(c.label).substring(0,8))||norm(c.label).includes(norm(s.label).substring(0,8)));
+    if(baseMatch&&c.key!==baseMatch.key&&!existingKeys.includes(baseMatch.key)){
+      duplicates.push({orphan:c,base:baseMatch});
+    }
+  });
+  if(missing.length===0&&archivedBase.length===0&&duplicates.length===0){
     toast('Todas las categorías base están activas','ok');return;
   }
   const msg=[];
-  if(missing.length)msg.push(`Restaurar ${missing.length} eliminada${missing.length>1?'s':''}: ${missing.map(c=>c.label).join(', ')}`);
-  if(archivedBase.length)msg.push(`Reactivar ${archivedBase.length} archivada${archivedBase.length>1?'s':''}: ${archivedBase.map(c=>c.label).join(', ')}`);
+  if(missing.length)msg.push(`✓ Restaurar ${missing.length} eliminada${missing.length>1?'s':''}: ${missing.map(c=>c.label).join(', ')}`);
+  if(archivedBase.length)msg.push(`↺ Reactivar ${archivedBase.length} archivada${archivedBase.length>1?'s':''}: ${archivedBase.map(c=>c.label).join(', ')}`);
+  if(duplicates.length)msg.push(`⚠ Limpiar ${duplicates.length} duplicado${duplicates.length>1?'s':''}: ${duplicates.map(d=>`"${d.orphan.label}" → "${d.base.label}"`).join(', ')}`);
   if(!confirm(`¿Restaurar categorías base?\n\n${msg.join('\n\n')}\n\nLas categorías personalizadas y modificaciones se mantienen intactas.`))return;
-  // Agregar las que faltan (con valores semilla)
+  // Limpiar duplicados: reasignar gastos al key base y eliminar el huérfano
+  duplicates.forEach(({orphan,base})=>{
+    expenses.forEach(e=>{if(e.cat===orphan.key)e.cat=base.key});
+    CATS=CATS.filter(c=>c.key!==orphan.key);
+  });
+  // Agregar las que faltan (con valores semilla — preserva key original)
   missing.forEach(s=>CATS.push(JSON.parse(JSON.stringify(s))));
+  // Agregar las base que se necesitan por duplicado
+  duplicates.forEach(({base})=>{
+    if(!CATS.find(c=>c.key===base.key))CATS.push(JSON.parse(JSON.stringify(base)));
+  });
   // Reactivar archivadas que sean base
   archivedBase.forEach(c=>{c.archived=false});
   saveCatsLocal();syncCatsToSheets();buildSel();renderAll();renderMgrTable();
-  toast(`✓ ${missing.length+archivedBase.length} categoría(s) restaurada(s)`,'ok');
+  const total=missing.length+archivedBase.length+duplicates.length;
+  toast(`✓ ${total} categoría(s) restaurada(s)`,'ok');
 }
 
 // ─── EXPORT/IMPORT CONFIG ─────────────────
@@ -1438,7 +1458,17 @@ async function addExp(){
   else toast('Guardado en Sheets ✓','ok');
 }
 function quickAdd(d,a,c){$('f-desc').value=d;$('f-amt').value=a;$('f-cat').value=c;$('f-amt').focus()}
-function delExp(i){if(i<0)return;expenses.splice(i,1);renderAll();toast('Eliminado','warn')}
+async function delExp(i){
+  if(i<0||!expenses[i])return;
+  const exp=expenses[i];
+  if(!confirm(`¿Eliminar "${exp.desc}" de ${fmt(exp.amount)}?\n\nSe eliminará también de Google Sheets.`))return;
+  setSS('loading');
+  try{
+    await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({_action:'deleteExpense',date:exp.date,desc:exp.desc,cat:exp.cat,amount:exp.amount})});
+    setSS('ok');
+  }catch(e){setSS('err');toast('Error sincronizando con Sheets','err');return}
+  expenses.splice(i,1);renderAll();toast('Eliminado de app y Sheets ✓','ok');
+}
 function delInv(i){if(i<0)return;fireTxs.splice(i,1);localStorage.setItem('ft_fire',JSON.stringify(fireTxs));renderPortafolio();toast('Eliminado','warn')}
 function delSeg(i){if(i<0)return;seguimiento.splice(i,1);localStorage.setItem('ft_seg',JSON.stringify(seguimiento));renderSeguimiento();toast('Eliminado','warn')}
 function clearMonth(){if(!confirm(`¿Borrar gastos de ${mkLbl(curMonth)}?`))return;expenses=expenses.filter(e=>mkKey(e.date)!==curMonth);renderAll();toast('Mes eliminado','warn')}
