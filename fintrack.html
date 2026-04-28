@@ -198,6 +198,7 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
 
 .mo{position:fixed;inset:0;background:#0a0a0fcc;display:flex;align-items:center;justify-content:center;z-index:300;opacity:0;pointer-events:none;transition:opacity 0.3s}
 .mo.show{opacity:1;pointer-events:all}
+.mo.mo-top{z-index:400;background:#0a0a0fee}
 .md{background:#0d0d14;border:1px solid #1a1a2e;border-radius:8px;padding:22px;min-width:300px;max-width:460px;width:90%;max-height:90vh;overflow-y:auto}
 .md-lg{max-width:720px}
 .md-xl{max-width:900px}
@@ -321,6 +322,7 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
   <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
     <button class="btn-b" onclick="openCatModal()">+ Nueva categoría</button>
     <button class="btn-sm" onclick="toggleArchived()" id="btn-toggle-arch">Mostrar archivadas</button>
+    <button class="btn-sm" onclick="restoreBaseCats()" style="border-color:#00ff88;color:#00ff88">↺ Restaurar base</button>
     <button class="btn-sm" onclick="exportConfig()">↓ Exportar config</button>
     <button class="btn-sm" onclick="importConfig()">↑ Importar config</button>
     <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(event)"/>
@@ -921,6 +923,9 @@ function openCatModal(key=null){
   $('cat-color').value = c?c.color:'#4d9fff';
   // Render color grid
   $('cat-color-grid').innerHTML = COLORS.map(col=>`<div class="color-opt ${col===(c?c.color:'#4d9fff')?'selected':''}" style="background:${col}" onclick="selectCatColor('${col}')"></div>`).join('');
+  // Si el modal de gestión está abierto, abrir cat encima
+  const mgrOpen=$('mo-mgr').classList.contains('show');
+  $('mo-cat').classList.toggle('mo-top',mgrOpen);
   om('mo-cat');
   setTimeout(()=>$('cat-name').focus(),100);
 }
@@ -967,6 +972,8 @@ function attemptDelCat(key){
   const tot=gastosCat.reduce((s,e)=>s+parseFloat(e.amount),0);
   $('mo-del-msg').textContent=`"${c.label}" tiene ${gastosCat.length} gasto${gastosCat.length>1?'s':''} registrado${gastosCat.length>1?'s':''}.`;
   $('mo-del-detail').textContent=`Total: ${fmt(tot)}. Estos gastos se moverán a la categoría "Otros" antes de eliminar.`;
+  const mgrOpen=$('mo-mgr').classList.contains('show');
+  $('mo-del').classList.toggle('mo-top',mgrOpen);
   om('mo-del');
 }
 function confirmDelCat(){
@@ -1020,6 +1027,26 @@ function toggleArchived(){
   showArchived=!showArchived;
   $('btn-toggle-arch').textContent=showArchived?'Ocultar archivadas':'Mostrar archivadas';
   renderMgrTable();
+}
+
+function restoreBaseCats(){
+  // Detecta cuáles base faltan o están archivadas
+  const existingKeys=CATS.map(c=>c.key);
+  const missing=SEED_CATS.filter(s=>!existingKeys.includes(s.key));
+  const archivedBase=CATS.filter(c=>c.archived&&SEED_CATS.find(s=>s.key===c.key));
+  if(missing.length===0&&archivedBase.length===0){
+    toast('Todas las categorías base están activas','ok');return;
+  }
+  const msg=[];
+  if(missing.length)msg.push(`Restaurar ${missing.length} eliminada${missing.length>1?'s':''}: ${missing.map(c=>c.label).join(', ')}`);
+  if(archivedBase.length)msg.push(`Reactivar ${archivedBase.length} archivada${archivedBase.length>1?'s':''}: ${archivedBase.map(c=>c.label).join(', ')}`);
+  if(!confirm(`¿Restaurar categorías base?\n\n${msg.join('\n\n')}\n\nLas categorías personalizadas y modificaciones se mantienen intactas.`))return;
+  // Agregar las que faltan (con valores semilla)
+  missing.forEach(s=>CATS.push(JSON.parse(JSON.stringify(s))));
+  // Reactivar archivadas que sean base
+  archivedBase.forEach(c=>{c.archived=false});
+  saveCatsLocal();syncCatsToSheets();buildSel();renderAll();renderMgrTable();
+  toast(`✓ ${missing.length+archivedBase.length} categoría(s) restaurada(s)`,'ok');
 }
 
 // ─── EXPORT/IMPORT CONFIG ─────────────────
