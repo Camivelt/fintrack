@@ -352,11 +352,14 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
 </div></div>
 
 <!-- Modal: Editar/Crear categoría (NUEVO UNIFICADO) -->
-<div class="mo" id="mo-cat"><div class="md">
-  <div class="mt2"><span id="mo-cat-title">Nueva categoría</span></div>
+<div class="mo" id="mo-cat"><div class="md md-lg">
+  <div class="mt2">
+    <span id="mo-cat-title">Nueva categoría</span>
+    <button class="btn-tiny" onclick="cm('mo-cat')" style="font-size:14px">×</button>
+  </div>
   <div class="fg">
     <div class="fgf"><label class="fl">Nombre</label><input class="fi" id="cat-name" placeholder="ej. Mercado, Netflix..."/></div>
-    <div><label class="fl">Presupuesto ($)</label><input class="fi" id="cat-budget" type="number" min="0" step="0.01"/></div>
+    <div><label class="fl">Presupuesto actual ($)</label><input class="fi" id="cat-budget" type="number" min="0" step="0.01"/></div>
     <div><label class="fl">Tipo</label><select class="fs" id="cat-fixed">
       <option value="false">Variable</option>
       <option value="true">Fijo</option>
@@ -366,6 +369,25 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
       <input type="hidden" id="cat-color" value="#4d9fff"/>
     </div>
   </div>
+
+  <div style="background:#0a0a0f;border:1px solid #1a1a2e;border-radius:5px;padding:12px;margin-top:14px">
+    <div class="slbl" style="margin-bottom:8px">📅 VIGENCIA</div>
+    <div class="fg">
+      <div><label class="fl">Activa desde</label><input class="fi" id="cat-desde" type="month"/></div>
+      <div><label class="fl">Activa hasta (vacío = vigente)</label><input class="fi" id="cat-hasta" type="month"/></div>
+    </div>
+  </div>
+
+  <div style="background:#c084fc08;border:1px solid #c084fc30;border-radius:5px;padding:12px;margin-top:10px" id="cat-budget-hist-wrap">
+    <div class="slbl" style="color:#c084fc;margin-bottom:8px">💰 HISTORIAL DE PRESUPUESTO</div>
+    <div id="cat-budget-history" style="max-height:140px;overflow-y:auto;margin-bottom:10px"></div>
+    <div class="fg">
+      <div><label class="fl">Desde mes</label><input class="fi" id="cat-bh-mes" type="month"/></div>
+      <div><label class="fl">Nuevo monto ($)</label><input class="fi" id="cat-bh-monto" type="number" min="0" step="0.01"/></div>
+    </div>
+    <button class="btn-tiny" onclick="addCatBudgetChange()" style="margin-top:8px;border-color:#c084fc;color:#c084fc;padding:5px 10px">+ Agregar cambio de presupuesto</button>
+  </div>
+
   <div class="ma">
     <button class="btn-cancel" onclick="cm('mo-cat')">Cancelar</button>
     <button class="btn-ok" onclick="saveCat()">Guardar</button>
@@ -1007,6 +1029,73 @@ const mkLbl=k=>{const[y,m]=k.split('-');return['ENE','FEB','MAR','ABR','MAY','JU
 const today=()=>new Date().toISOString().split('T')[0];
 const curMK=()=>mkKey(today());
 const activeCats=()=>CATS.filter(c=>!c.archived);
+
+// ── HELPERS DE VIGENCIA Y PRESUPUESTO HISTÓRICO ─────────────────
+// ¿La categoría estaba activa en este mes? (formato 'YYYY-MM')
+function catActiveAt(cat,mes){
+  if(cat.archived)return false;
+  const desde=cat.desde||'1900-01';
+  const hasta=cat.hasta;
+  if(mes<desde)return false;
+  if(hasta&&mes>hasta)return false;
+  return true;
+}
+// Presupuesto vigente en un mes dado (lee budgetHistory si existe, si no usa cat.budget)
+function catBudgetAt(cat,mes){
+  if(!catActiveAt(cat,mes))return 0;
+  const hist=cat.budgetHistory||[];
+  if(!hist.length)return parseFloat(cat.budget)||0;
+  const sorted=[...hist].sort((a,b)=>a.mes>b.mes?1:-1);
+  let result=parseFloat(sorted[0].monto)||parseFloat(cat.budget)||0;
+  for(const h of sorted){
+    if(h.mes<=mes)result=parseFloat(h.monto)||result;
+    else break;
+  }
+  return result;
+}
+// Suma de presupuesto para un rango (mes a mes, exacto)
+function catBudgetForRange(cat,fromDate,toDate){
+  const fromYM=fromDate.substring(0,7);
+  const toYM=toDate.substring(0,7);
+  const [fy,fm]=fromYM.split('-').map(Number);
+  const [ty,tm]=toYM.split('-').map(Number);
+  let total=0;let y=fy,m=fm,count=0;
+  while(y<ty||(y===ty&&m<=tm)){
+    const ymStr=y+'-'+String(m).padStart(2,'0');
+    total+=catBudgetAt(cat,ymStr);
+    count++;
+    m++;if(m>12){m=1;y++}
+    if(count>120)break;
+  }
+  return total;
+}
+// ¿La categoría tuvo vigencia en algún mes del rango?
+function catActiveInRange(cat,fromDate,toDate){
+  if(cat.archived)return false;
+  const fromYM=fromDate.substring(0,7);
+  const toYM=toDate.substring(0,7);
+  const desde=cat.desde||'1900-01';
+  const hasta=cat.hasta||'9999-99';
+  // Solapamiento: desde <= toYM Y hasta >= fromYM
+  return desde<=toYM&&hasta>=fromYM;
+}
+// Categorías activas en el rango actual
+function activeCatsInPeriod(){
+  const r=getPeriodRange();
+  return CATS.filter(c=>!c.archived&&catActiveInRange(c,r.from,r.to));
+}
+// Auto-extender 'desde' si se registra un gasto antes del desde actual
+function autoExtendCatDesde(catKey,gastoDate){
+  const cat=CATS.find(c=>c.key===catKey);
+  if(!cat)return;
+  const gastoMes=gastoDate.substring(0,7);
+  if(!cat.desde||gastoMes<cat.desde){
+    cat.desde=gastoMes;
+    saveCatsLocal();
+    syncCatsToSheets();
+  }
+}
+
 const fixedTotal=()=>activeCats().filter(c=>c.fixed).reduce((s,c)=>s+c.budget,0);
 // ══════════════════════════════════════════
 // PERÍODO Y FILTRADO
@@ -1070,6 +1159,26 @@ function loadCatsAndVasijas(){
 }
 function saveCatsLocal(){localStorage.setItem('ft_cats',JSON.stringify(CATS))}
 function saveVasijasLocal(){localStorage.setItem('ft_vasijas',JSON.stringify(VASIJAS))}
+
+// Migración: agregar campo 'desde' a categorías que no lo tienen
+function migrateCatsVigencia(){
+  let firstMes=null;
+  // Buscar primer mes con datos
+  if(expenses.length){
+    const sorted=expenses.map(e=>e.date).filter(d=>d).sort();
+    if(sorted.length)firstMes=sorted[0].substring(0,7);
+  }
+  if(!firstMes)firstMes=new Date().toISOString().substring(0,7);
+  let migrated=false;
+  CATS.forEach(c=>{
+    if(c.desde===undefined){c.desde=firstMes;migrated=true}
+    if(c.hasta===undefined)c.hasta=null;
+    if(!c.budgetHistory)c.budgetHistory=[];
+    // Normalizar tipos
+    if(c.hasta==='')c.hasta=null;
+  });
+  if(migrated)saveCatsLocal();
+}
 
 // Sync con Sheets
 async function syncCatsToSheets(){
@@ -1249,6 +1358,19 @@ function openCatModal(key=null){
   $('cat-budget').value = c?c.budget:'';
   $('cat-fixed').value = c?String(c.fixed):'false';
   $('cat-color').value = c?c.color:'#4d9fff';
+  // Vigencia
+  const defaultDesde=c?(c.desde||''):(new Date().toISOString().substring(0,7));
+  $('cat-desde').value=defaultDesde;
+  $('cat-hasta').value=c?(c.hasta||''):'';
+  // Historial de presupuesto
+  if(c){
+    if(!c.budgetHistory)c.budgetHistory=[];
+    renderCatBudgetHistory(c);
+  }else{
+    // Para nueva cat, sin historial todavía
+    $('cat-budget-history').innerHTML='<div style="color:#444;font-size:11px;padding:6px">Sin cambios — solo el presupuesto inicial</div>';
+  }
+  $('cat-bh-mes').value='';$('cat-bh-monto').value='';
   // Render color grid
   $('cat-color-grid').innerHTML = COLORS.map(col=>`<div class="color-opt ${col===(c?c.color:'#4d9fff')?'selected':''}" style="background:${col}" onclick="selectCatColor('${col}')"></div>`).join('');
   // Si el modal de gestión está abierto, abrir cat encima
@@ -1257,10 +1379,55 @@ function openCatModal(key=null){
   om('mo-cat');
   setTimeout(()=>$('cat-name').focus(),100);
 }
+function renderCatBudgetHistory(c){
+  if(!c.budgetHistory||!c.budgetHistory.length){
+    $('cat-budget-history').innerHTML='<div style="color:#444;font-size:11px;padding:6px">Sin cambios — solo el presupuesto inicial</div>';
+    return;
+  }
+  const sorted=[...c.budgetHistory].sort((a,b)=>a.mes>b.mes?-1:1);
+  $('cat-budget-history').innerHTML=sorted.map(h=>{
+    const realIdx=c.budgetHistory.findIndex(x=>x.mes===h.mes&&x.monto==h.monto);
+    return`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 4px;border-bottom:1px solid #1a1a2e">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#888">${mkLbl(h.mes)}</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#c084fc;font-weight:700">${fmt(h.monto)}</span>
+        <button class="btn-tiny del" onclick="delCatBudgetEntry(${realIdx})" title="Eliminar">×</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function addCatBudgetChange(){
+  const mes=$('cat-bh-mes').value;
+  const monto=parseFloat($('cat-bh-monto').value);
+  if(!mes||isNaN(monto)||monto<0){toast('Completa mes y monto','warn');return}
+  const c = editingCatKey ? CATS.find(x=>x.key===editingCatKey) : null;
+  if(!c){toast('Guarda la categoría primero, luego edítala para agregar historial','warn');return}
+  if(!c.budgetHistory)c.budgetHistory=[];
+  const existIdx=c.budgetHistory.findIndex(h=>h.mes===mes);
+  if(existIdx>=0){
+    if(!confirm(`Ya hay un cambio para ${mkLbl(mes)} (${fmt(c.budgetHistory[existIdx].monto)}). ¿Reemplazar?`))return;
+    c.budgetHistory[existIdx].monto=monto;
+  }else{
+    c.budgetHistory.push({mes,monto});
+  }
+  c.budgetHistory.sort((a,b)=>a.mes>b.mes?1:-1);
+  saveCatsLocal();
+  renderCatBudgetHistory(c);
+  $('cat-bh-mes').value='';$('cat-bh-monto').value='';
+  toast(`Cambio agregado: ${mkLbl(mes)} → ${fmtI(monto)}`,'ok');
+}
+function delCatBudgetEntry(idx){
+  const c = editingCatKey ? CATS.find(x=>x.key===editingCatKey) : null;
+  if(!c||!c.budgetHistory||idx<0)return;
+  const h=c.budgetHistory[idx];
+  if(!confirm(`¿Eliminar cambio de ${mkLbl(h.mes)} (${fmt(h.monto)})?`))return;
+  c.budgetHistory.splice(idx,1);
+  saveCatsLocal();
+  renderCatBudgetHistory(c);
+  toast('Eliminado','warn');
+}
 function selectCatColor(col){
   $('cat-color').value=col;
-  document.querySelectorAll('#cat-color-grid .color-opt').forEach(el=>el.classList.toggle('selected',el.style.background.replace(/\s/g,'')===col||el.style.backgroundColor===col));
-  // Más robusto: re-render
   $('cat-color-grid').innerHTML = COLORS.map(c=>`<div class="color-opt ${c===col?'selected':''}" style="background:${c}" onclick="selectCatColor('${c}')"></div>`).join('');
 }
 function saveCat(){
@@ -1268,15 +1435,21 @@ function saveCat(){
   const budget=parseFloat($('cat-budget').value);
   const fixed=$('cat-fixed').value==='true';
   const color=$('cat-color').value;
+  const desde=$('cat-desde').value||new Date().toISOString().substring(0,7);
+  const hasta=$('cat-hasta').value||null;
   if(!name||isNaN(budget)||budget<0){toast('Completa nombre y presupuesto','warn');return}
+  if(hasta&&hasta<desde){toast('La fecha "Hasta" debe ser posterior a "Desde"','warn');return}
   if(editingCatKey){
     const c=CATS.find(x=>x.key===editingCatKey);
-    if(c){c.label=name;c.budget=budget;c.fixed=fixed;c.color=color}
+    if(c){
+      c.label=name;c.budget=budget;c.fixed=fixed;c.color=color;
+      c.desde=desde;c.hasta=hasta;
+      if(!c.budgetHistory)c.budgetHistory=[];
+    }
     toast('Categoría actualizada ✓','ok');
   }else{
-    // Verificar key único
     const key='cc_'+Date.now();
-    CATS.push({key,label:name,budget,color,fixed,archived:false});
+    CATS.push({key,label:name,budget,color,fixed,archived:false,desde,hasta,budgetHistory:[]});
     toast(`"${name}" creada ✓`,'ok');
   }
   saveCatsLocal();syncCatsToSheets();
@@ -1589,8 +1762,9 @@ function renderKPIs(ts,t,apTotal,apInv,apSeg){
   $('k-seg-bar').style.background=barColor(segPct,'goal');
 
   // KPI 5: Gastos Fijos REALES
-  const fijReal=activeCats().filter(c=>c.fixed).reduce((s,c)=>s+(t[c.key]||0),0);
-  const fijPlan=fixedTotal()*m;
+  const catsActivas=activeCatsInPeriod();
+  const fijReal=catsActivas.filter(c=>c.fixed).reduce((s,c)=>s+(t[c.key]||0),0);
+  const fijPlan=catsActivas.filter(c=>c.fixed).reduce((s,c)=>s+catBudgetForRange(c,r.from,r.to),0);
   const fijPct=fijPlan>0?(fijReal/fijPlan)*100:0;
   $('k-fij').textContent=fmt(fijReal);
   $('k-fij-p').innerHTML=`Plan ${fmtI(fijPlan)} · <span style="color:${subColor(fijPct,'expense')}">${fijPct.toFixed(0)}%</span>`;
@@ -1598,8 +1772,8 @@ function renderKPIs(ts,t,apTotal,apInv,apSeg){
   $('k-fij-bar').style.background=barColor(fijPct,'expense');
 
   // KPI 6: Gastos Variables REALES
-  const varReal=activeCats().filter(c=>!c.fixed).reduce((s,c)=>s+(t[c.key]||0),0);
-  const varPlan=activeCats().filter(c=>!c.fixed).reduce((s,c)=>s+c.budget,0)*m;
+  const varReal=catsActivas.filter(c=>!c.fixed).reduce((s,c)=>s+(t[c.key]||0),0);
+  const varPlan=catsActivas.filter(c=>!c.fixed).reduce((s,c)=>s+catBudgetForRange(c,r.from,r.to),0);
   const varPct=varPlan>0?(varReal/varPlan)*100:0;
   $('k-var').textContent=fmt(varReal);
   $('k-var-p').innerHTML=`Plan ${fmtI(varPlan)} · <span style="color:${subColor(varPct,'expense')}">${varPct.toFixed(0)}%</span>`;
@@ -1682,11 +1856,11 @@ function renderVasijas(t,apInv,apSeg){
   }).join('');
 }
 function renderAlertas(t){
-  const r=getPeriodRange();const m=r.months;
+  const r=getPeriodRange();
   const als=[];const vivirPct=VASIJAS[0].pct;
-  activeCats().forEach(c=>{
+  activeCatsInPeriod().forEach(c=>{
     const g=t[c.key]||0;
-    const budgetMul=c.budget*m;
+    const budgetMul=catBudgetForRange(c,r.from,r.to);
     const p=budgetMul>0?(g/budgetMul)*100:0;
     if(p>=100)als.push({type:'r',m:`${c.label.toUpperCase()}: superado — ${fmt(g)} de ${fmtI(budgetMul)}`});
     else if(p>=80)als.push({type:'y',m:`${c.label}: al ${p.toFixed(0)}% — ${fmt(budgetMul-g)} restante`});
@@ -1701,11 +1875,13 @@ function renderAlertas(t){
   $('alertas').innerHTML=als.slice(0,6).map(a=>`<div class="al al-${a.type}"><div class="ad"></div><span>${a.m}</span></div>`).join('');
 }
 function renderTracker(t){
-  const r=getPeriodRange();const m=r.months;
+  const r=getPeriodRange();
   let n=0;
-  $('tracker-body').innerHTML=activeCats().map(c=>{
+  // Solo categorías que tuvieron vigencia en el rango
+  const cats=activeCatsInPeriod();
+  $('tracker-body').innerHTML=cats.map(c=>{
     const g=t[c.key]||0;
-    const budgetMul=c.budget*m;
+    const budgetMul=catBudgetForRange(c,r.from,r.to);
     const p=budgetMul>0?Math.min((g/budgetMul)*100,100):0,ov=g>budgetMul,wn=p>=80&&!ov;
     if(ov||wn)n++;
     const bc=ov?'#ff4d4d':wn?'#ffaa00':c.color,pc=ov?'#ff4d4d':wn?'#ffaa00':c.color;
@@ -1715,10 +1891,11 @@ function renderTracker(t){
   $('tr-sum').textContent=n>0?`${n} ALERTA${n>1?'S':''}!`:'TODO OK';
 }
 function renderBudgets(t){
-  const r=getPeriodRange();const m=r.months;
-  $('budgets').innerHTML=activeCats().map(c=>{
+  const r=getPeriodRange();
+  const cats=activeCatsInPeriod();
+  $('budgets').innerHTML=cats.map(c=>{
     const g=t[c.key]||0;
-    const budgetMul=c.budget*m;
+    const budgetMul=catBudgetForRange(c,r.from,r.to);
     const p=budgetMul>0?Math.min((g/budgetMul)*100,100):0,ov=g>budgetMul;
     const bc=ov?'#ff4d4d':p>80?'#ffaa00':c.color,bg=ov?'#ff4d4d':p>80?'#ffaa00':p>50?'#ffcc55':'#00ff88';
     return`<div class="br"><div class="bh"><span class="bn">${c.label}${c.fixed?' <span style="font-size:8px;color:#333">[F]</span>':''}</span><div class="br-actions"><button class="btn-tiny" onclick="openCatModal('${c.key}')">✎</button><button class="btn-tiny del" onclick="attemptDelCat('${c.key}')">×</button></div><span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#444">${fmt(g)} / ${fmtI(budgetMul)}</span><span class="badge" style="background:${bg}18;color:${bg};border:1px solid ${bg}35">${p.toFixed(0)}%</span></div><div class="bg"><div class="bf" style="width:${p.toFixed(1)}%;background:${bc}"></div></div></div>`;
@@ -1944,6 +2121,8 @@ async function addExp(){
   const exp={desc,amount:amt,cat,date};
   await saveExpToSheets(exp);
   expenses.push({...exp,id:Date.now()});
+  // Auto-extender 'desde' de la categoría si el gasto es anterior
+  autoExtendCatDesde(cat,date);
   if(mkKey(date)!==curMonth)switchMonth(mkKey(date));
   renderAll();$('f-desc').value='';$('f-amt').value='';
   const ci=activeCats().find(c=>c.key===cat),g=totals(filtExp())[cat]||0;
@@ -2033,7 +2212,8 @@ async function init(){
   lb.style.width='30%';await new Promise(r=>setTimeout(r,300));
   lb.style.width='65%';lm.textContent='CARGANDO DATOS...';
   await loadSheets();
-  buildSel();// re-build después de Sheets sync
+  migrateCatsVigencia();// migrar categorías sin 'desde'
+  buildSel();
   lb.style.width='100%';lm.textContent='LISTO';
   await new Promise(r=>setTimeout(r,400));
   $('lov').classList.add('hidden');
