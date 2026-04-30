@@ -328,12 +328,27 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
   </div>
 </div></div>
 
-<!-- Modal: Salario -->
-<div class="mo" id="mo-salary"><div class="md">
-  <div class="mt2">Actualizar salario</div>
-  <div><label class="fl">Nuevo salario mensual ($)</label><input class="fi" id="ns" type="number" min="0" step="0.01"/></div>
-  <p style="font-size:11px;color:#333;margin-top:8px">Todos los porcentajes se recalcularán automáticamente.</p>
-  <div class="ma"><button class="btn-cancel" onclick="cm('mo-salary')">Cancelar</button><button class="btn-ok" onclick="saveSalary()">Actualizar</button></div>
+<!-- Modal: Salario con historial -->
+<div class="mo" id="mo-salary"><div class="md md-lg">
+  <div class="mt2">
+    <span>✎ Historial de salario</span>
+    <button class="btn-tiny" onclick="cm('mo-salary')" style="font-size:14px">×</button>
+  </div>
+  <p style="font-size:11px;color:#666;margin-bottom:14px">Cada cambio aplica desde el mes indicado en adelante. Los meses anteriores mantienen su salario histórico.</p>
+
+  <div style="background:#0a0a0f;border:1px solid #1a1a2e;border-radius:5px;padding:10px;margin-bottom:14px">
+    <div class="slbl" style="margin-bottom:8px">📅 HISTORIAL</div>
+    <div id="sal-history" style="max-height:180px;overflow-y:auto"></div>
+  </div>
+
+  <div style="background:#00ff8808;border:1px solid #00ff8830;border-radius:5px;padding:12px">
+    <div class="slbl" style="color:#00ff88;margin-bottom:8px">+ AGREGAR CAMBIO</div>
+    <div class="fg">
+      <div><label class="fl">Desde mes</label><input class="fi" id="sal-new-mes" type="month"/></div>
+      <div><label class="fl">Nuevo monto ($)</label><input class="fi" id="sal-new-monto" type="number" min="0" step="0.01" placeholder="ej. 5000"/></div>
+    </div>
+    <button class="btn-ok" onclick="addSalaryChange()" style="margin-top:10px;width:100%">Guardar cambio</button>
+  </div>
 </div></div>
 
 <!-- Modal: Editar/Crear categoría (NUEVO UNIFICADO) -->
@@ -883,7 +898,63 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
 // CONFIG
 // ══════════════════════════════════════════
 const SHEETS_URL='https://script.google.com/macros/s/AKfycbwbxNxc82LtrPLd60z7x66RSo1H7tg1zkduKqqy3uJfQV-PhniadTtd_Tbk1L4QfEeu/exec';
-let SAL=parseFloat(localStorage.getItem('ft_sal')||'4940');
+// Salario con historial: array de {mes: 'YYYY-MM', monto: number} ordenado ascendente
+// SAL = salario actual (más reciente) - se mantiene para compatibilidad
+let salaryHistory=JSON.parse(localStorage.getItem('ft_salary_history')||'[]');
+let SAL=4940;
+function getCurrentSalary(){
+  if(!salaryHistory.length)return 4940;
+  const sorted=[...salaryHistory].sort((a,b)=>a.mes>b.mes?1:-1);
+  return parseFloat(sorted[sorted.length-1].monto)||4940;
+}
+function getSalaryAt(mes){
+  // mes en formato 'YYYY-MM'
+  if(!salaryHistory.length)return 4940;
+  const sorted=[...salaryHistory].sort((a,b)=>a.mes>b.mes?1:-1);
+  // Buscar el último cambio que sea <= al mes solicitado
+  let result=parseFloat(sorted[0].monto)||4940;
+  for(const s of sorted){
+    if(s.mes<=mes)result=parseFloat(s.monto)||result;
+    else break;
+  }
+  return result;
+}
+function getSalaryForRange(fromDate,toDate){
+  // Suma exacta mes a mes según historial
+  // fromDate y toDate en formato 'YYYY-MM-DD'
+  const fromYM=fromDate.substring(0,7);
+  const toYM=toDate.substring(0,7);
+  let total=0;
+  let count=0;
+  const [fy,fm]=fromYM.split('-').map(Number);
+  const [ty,tm]=toYM.split('-').map(Number);
+  let y=fy,m=fm;
+  while(y<ty||(y===ty&&m<=tm)){
+    const ymStr=y+'-'+String(m).padStart(2,'0');
+    total+=getSalaryAt(ymStr);
+    count++;
+    m++;if(m>12){m=1;y++}
+    if(count>120)break; // safety
+  }
+  return {total,months:count};
+}
+// Migración: si no hay historial pero sí hay salario antiguo en localStorage, usarlo
+(function migrateSalary(){
+  if(salaryHistory.length)return;
+  const oldSal=parseFloat(localStorage.getItem('ft_sal')||'4940');
+  // Buscar primer mes con datos para usar como fecha inicial
+  let firstMes='2026-01';
+  try{
+    const exps=JSON.parse(localStorage.getItem('ft_exp')||'[]');
+    if(exps.length){
+      const sorted=exps.map(e=>e.date).filter(d=>d).sort();
+      if(sorted.length)firstMes=sorted[0].substring(0,7);
+    }
+  }catch(e){}
+  salaryHistory=[{mes:firstMes,monto:oldSal}];
+  localStorage.setItem('ft_salary_history',JSON.stringify(salaryHistory));
+})();
+SAL=getCurrentSalary();
 const FIRE={edad:33,meta:2100000,gasto:7000,tasa:0.04,capital:982.10,celiLimite:51500,rrspLimite:21420,retorno:0.07,aporte:2000,llegada:2019};
 const CELI_LIMITES={2009:5000,2010:5000,2011:5000,2012:5000,2013:5500,2014:5500,2015:10000,2016:5500,2017:5500,2018:5500,2019:6000,2020:6000,2021:6000,2022:6000,2023:6500,2024:7000,2025:7000,2026:7000};
 
@@ -1023,6 +1094,13 @@ async function loadSheets(){
       aportes=j.aportes.filter(a=>a.Fecha&&a.Monto).map(a=>({date:a.Fecha,tipo:a.Tipo,cuenta:a.Cuenta,monto:parseFloat(a.Monto),notas:a.Notas||'',id:a.Fecha+'_'+a.Monto+'_'+a.Tipo}));
       localStorage.setItem('ft_aportes',JSON.stringify(aportes));
     }
+    // Historial de salario
+    if(j.salaryHistory && Array.isArray(j.salaryHistory) && j.salaryHistory.length){
+      salaryHistory=j.salaryHistory.map(s=>({mes:s.Mes||s.mes,monto:parseFloat(s.Monto||s.monto)})).filter(s=>s.mes&&!isNaN(s.monto));
+      salaryHistory.sort((a,b)=>a.mes>b.mes?1:-1);
+      localStorage.setItem('ft_salary_history',JSON.stringify(salaryHistory));
+      SAL=getCurrentSalary();
+    }
     setSS('ok');
   }catch(e){setSS('err')}
   const ft=localStorage.getItem('ft_fire');if(ft) fireTxs=JSON.parse(ft);
@@ -1085,15 +1163,81 @@ function switchFireTab(tab,btn){
 // MODALS
 // ══════════════════════════════════════════
 function om(id){
-  if(id==='mo-salary')$('ns').value=SAL;
+  if(id==='mo-salary'){renderSalaryHistory();$('sal-new-mes').value=nextMonthAfterLatest();$('sal-new-monto').value=''}
   if(id==='mo-inv')$('iv-d').value=today();
   document.getElementById(id).classList.add('show');
 }
 function cm(id){document.getElementById(id).classList.remove('show')}
-function saveSalary(){
-  const v=parseFloat($('ns').value);if(isNaN(v)||v<=0){toast('Salario inválido','warn');return}
-  SAL=v;localStorage.setItem('ft_sal',v);$('sal-disp').textContent=fmtI(v);
-  cm('mo-salary');renderAll();toast('Salario actualizado ✓','ok');
+
+// ─── SALARIO CON HISTORIAL ─────────────────
+function nextMonthAfterLatest(){
+  if(!salaryHistory.length)return new Date().toISOString().substring(0,7);
+  const sorted=[...salaryHistory].sort((a,b)=>a.mes>b.mes?1:-1);
+  const last=sorted[sorted.length-1].mes;
+  const [y,m]=last.split('-').map(Number);
+  let nm=m+1,ny=y;if(nm>12){nm=1;ny=y+1}
+  return ny+'-'+String(nm).padStart(2,'0');
+}
+function renderSalaryHistory(){
+  const sorted=[...salaryHistory].sort((a,b)=>a.mes>b.mes?-1:1);
+  if(!sorted.length){$('sal-history').innerHTML='<div style="color:#444;font-size:11px;padding:8px">Sin historial</div>';return}
+  $('sal-history').innerHTML=sorted.map((s,idx)=>{
+    const realIdx=salaryHistory.findIndex(x=>x.mes===s.mes&&x.monto==s.monto);
+    const isLatest=idx===0;
+    const lbl=mkLbl(s.mes);
+    return`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 4px;border-bottom:1px solid #1a1a2e">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${isLatest?'#00ff88':'#888'}">${isLatest?'▶ ':'  '}${lbl}</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:${isLatest?'#00ff88':'#aaa'}">${fmt(s.monto)}</span>
+        ${isLatest?'<span style="font-family:\'JetBrains Mono\',monospace;font-size:8px;color:#00ff88">ACTUAL</span>':''}
+        ${salaryHistory.length>1?`<button class="btn-tiny del" onclick="delSalaryEntry(${realIdx})" title="Eliminar">×</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+async function addSalaryChange(){
+  const mes=$('sal-new-mes').value;
+  const monto=parseFloat($('sal-new-monto').value);
+  if(!mes||isNaN(monto)||monto<=0){toast('Completa mes y monto','warn');return}
+  // Si ya existe ese mes, reemplazar
+  const existIdx=salaryHistory.findIndex(s=>s.mes===mes);
+  if(existIdx>=0){
+    if(!confirm(`Ya hay un salario para ${mkLbl(mes)} (${fmt(salaryHistory[existIdx].monto)}). ¿Reemplazar por ${fmt(monto)}?`))return;
+    salaryHistory[existIdx].monto=monto;
+  }else{
+    salaryHistory.push({mes,monto});
+  }
+  salaryHistory.sort((a,b)=>a.mes>b.mes?1:-1);
+  localStorage.setItem('ft_salary_history',JSON.stringify(salaryHistory));
+  SAL=getCurrentSalary();
+  $('sal-disp').textContent=fmtI(SAL);
+  await syncSalaryToSheets();
+  renderSalaryHistory();
+  $('sal-new-monto').value='';
+  $('sal-new-mes').value=nextMonthAfterLatest();
+  renderAll();
+  toast(`Cambio guardado: ${mkLbl(mes)} → ${fmtI(monto)}`,'ok');
+}
+async function delSalaryEntry(idx){
+  if(idx<0||!salaryHistory[idx])return;
+  if(salaryHistory.length<=1){toast('Debe quedar al menos 1 registro','warn');return}
+  const s=salaryHistory[idx];
+  if(!confirm(`¿Eliminar cambio de ${mkLbl(s.mes)} (${fmt(s.monto)})?`))return;
+  salaryHistory.splice(idx,1);
+  localStorage.setItem('ft_salary_history',JSON.stringify(salaryHistory));
+  SAL=getCurrentSalary();
+  $('sal-disp').textContent=fmtI(SAL);
+  await syncSalaryToSheets();
+  renderSalaryHistory();
+  renderAll();
+  toast('Eliminado','warn');
+}
+async function syncSalaryToSheets(){
+  setSS('loading');
+  try{
+    await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({_action:'saveSalaryHistory',history:salaryHistory})});
+    setSS('ok');
+  }catch(e){setSS('err')}
 }
 
 // ─── EDITOR DE CATEGORÍAS ─────────────────
@@ -1406,7 +1550,9 @@ function renderKPIs(ts,t,apTotal,apInv,apSeg){
   const m=r.months;
   const inv=VASIJAS.find(v=>v.key==='inv');
   const seg=VASIJAS.find(v=>v.key==='seg');
-  const ingreso=SAL*m;
+  // Suma salarios del rango (histórico-aware)
+  const sr=getSalaryForRange(r.from,r.to);
+  const ingreso=sr.total;
   apTotal=apTotal||0;apInv=apInv||0;apSeg=apSeg||0;
 
   // KPI 1: Disponible (descuenta gastos + aportes)
@@ -1521,17 +1667,18 @@ function renderVasijas(t,apInv,apSeg){
     {...VASIJAS[3],g:ocio,type:'expense'}
   ];
   $('vasijas').innerHTML=data.map(v=>{
-    const a=SAL*v.pct/100*m,p=a>0?Math.min((v.g/a)*100,100):0;
+    const sr=getSalaryForRange(r.from,r.to);
+    const ingreso=sr.total;
+    const a=ingreso*v.pct/100,p=a>0?Math.min((v.g/a)*100,100):0;
     let bc,pc;
     if(v.type==='goal'){
-      // Para metas: más es mejor
       bc=barColor(p,'goal');pc=subColor(p,'goal');
     }else{
       const ov=v.g>a;
       bc=ov?'#ff4d4d':p>80?'#ffaa00':v.color;
       pc=ov?'#ff4d4d':p>80?'#ffaa00':v.color;
     }
-    return`<div class="vrow"><div class="vhead"><span style="font-size:13px;font-weight:600;color:${v.color}">${v.label}</span><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#444">${fmt(v.g)} / ${fmt(a)}</span></div><div class="bg"><div class="bf" style="width:${p.toFixed(1)}%;background:${bc}"></div></div><div class="vmeta"><span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#2a2a3a">Objetivo ${v.pct}% → real ${(v.g/(SAL*m)*100).toFixed(1)}%</span><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:${pc}">${p.toFixed(0)}%</span></div></div>`;
+    return`<div class="vrow"><div class="vhead"><span style="font-size:13px;font-weight:600;color:${v.color}">${v.label}</span><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#444">${fmt(v.g)} / ${fmt(a)}</span></div><div class="bg"><div class="bf" style="width:${p.toFixed(1)}%;background:${bc}"></div></div><div class="vmeta"><span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#2a2a3a">Objetivo ${v.pct}% → real ${ingreso>0?(v.g/ingreso*100).toFixed(1):0}%</span><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:${pc}">${p.toFixed(0)}%</span></div></div>`;
   }).join('');
 }
 function renderAlertas(t){
@@ -1544,7 +1691,8 @@ function renderAlertas(t){
     if(p>=100)als.push({type:'r',m:`${c.label.toUpperCase()}: superado — ${fmt(g)} de ${fmtI(budgetMul)}`});
     else if(p>=80)als.push({type:'y',m:`${c.label}: al ${p.toFixed(0)}% — ${fmt(budgetMul-g)} restante`});
   });
-  const limVivir=SAL*vivirPct/100*m;
+  const sr=getSalaryForRange(r.from,r.to);
+  const limVivir=sr.total*vivirPct/100;
   const vp=limVivir>0?vivirTotal(t)/limVivir*100:0;
   if(vp>=100)als.push({type:'r',m:`GASTOS VIVIR: superó el ${vivirPct}% objetivo`});
   else if(vp>=85)als.push({type:'y',m:`GASTOS VIVIR al ${vp.toFixed(0)}% del límite`});
