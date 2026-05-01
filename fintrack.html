@@ -1169,6 +1169,35 @@ function loadCatsAndVasijas(){
 function saveCatsLocal(){localStorage.setItem('ft_cats',JSON.stringify(CATS))}
 function saveVasijasLocal(){localStorage.setItem('ft_vasijas',JSON.stringify(VASIJAS))}
 
+// Deduplicar categorías por key (conserva la primera, fusiona presupuestos si difieren)
+function dedupeCats(){
+  const seen={};
+  const result=[];
+  let removed=0;
+  CATS.forEach(c=>{
+    if(!c.key)return;
+    if(seen[c.key]){
+      removed++;
+      // Fusionar: si la duplicada tiene budgetHistory más completo, lo combinamos
+      const orig=seen[c.key];
+      if(c.budgetHistory&&c.budgetHistory.length>(orig.budgetHistory||[]).length){
+        orig.budgetHistory=c.budgetHistory;
+      }
+      // Mantener el budget mayor (probablemente el más reciente)
+      if(parseFloat(c.budget)>parseFloat(orig.budget||0))orig.budget=c.budget;
+    }else{
+      seen[c.key]=c;
+      result.push(c);
+    }
+  });
+  if(removed>0){
+    CATS=result;
+    saveCatsLocal();
+    return removed;
+  }
+  return 0;
+}
+
 // Migración: agregar campo 'desde' a categorías que no lo tienen
 function migrateCatsVigencia(){
   let firstMes=null;
@@ -2239,6 +2268,12 @@ async function init(){
   lb.style.width='30%';await new Promise(r=>setTimeout(r,300));
   lb.style.width='65%';lm.textContent='CARGANDO DATOS...';
   await loadSheets();
+  // Auto-deduplicar al cargar (limpia duplicados que pudieron crearse por bugs anteriores)
+  const removed=dedupeCats();
+  if(removed>0){
+    syncCatsToSheets();// sincronizar Sheet limpio
+    setTimeout(()=>toast(`Limpieza: ${removed} duplicado${removed>1?'s':''} eliminado${removed>1?'s':''}`,'warn'),1000);
+  }
   migrateCatsVigencia();// migrar categorías sin 'desde'
   buildSel();
   lb.style.width='100%';lm.textContent='LISTO';
