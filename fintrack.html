@@ -288,6 +288,22 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
 
 <!-- MODALS -->
 
+<!-- Modal: Editar Meta FIRE -->
+<div class="mo" id="mo-fire-meta"><div class="md">
+  <div class="mt2">🔥 Editar Meta FIRE</div>
+  <p style="font-size:11px;color:#666;margin-bottom:14px">El número que necesitas acumular para retirarte. Regla común: gasto anual × 25 (regla del 4%).</p>
+  <div class="fg">
+    <div><label class="fl">Gasto mensual deseado ($)</label><input class="fi" id="fm-gasto" type="number" min="0" step="100" placeholder="7000"/></div>
+    <div><label class="fl">Tasa retiro segura (%)</label><input class="fi" id="fm-tasa" type="number" min="2" max="6" step="0.1" value="4"/></div>
+    <div class="fgf"><label class="fl">O ingresa la meta directamente ($)</label><input class="fi" id="fm-meta" type="number" min="0" step="1000" placeholder="2100000"/></div>
+  </div>
+  <p style="font-size:10px;color:#444;margin-top:10px;line-height:1.4">💡 Si llenas gasto y tasa, calculamos meta automáticamente. Si llenas meta directa, esa se usará.</p>
+  <div class="ma">
+    <button class="btn-cancel" onclick="cm('mo-fire-meta')">Cancelar</button>
+    <button class="btn-ok" onclick="saveFireMeta()">Guardar</button>
+  </div>
+</div></div>
+
 <!-- Modal: Rango personalizado -->
 <div class="mo" id="mo-range"><div class="md">
   <div class="mt2">📅 Rango personalizado</div>
@@ -653,7 +669,7 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
   <div class="fire-subpage active" id="fp-overview">
     <div class="kpi-row k6">
       <div class="kpi-card" style="--accent:#00ff88"><div class="kl">Patrimonio total</div><div class="kv" id="f-pat">—</div><div class="ks">CELI + RRSP + otros</div></div>
-      <div class="kpi-card" style="--accent:#4d9fff"><div class="kl">Meta FIRE</div><div class="kv" id="f-meta">$2,100,000</div><div class="ks">$7,000/mes × 4%</div></div>
+      <div class="kpi-card" style="--accent:#4d9fff;cursor:pointer" onclick="editFireMeta()" title="Click para editar"><div class="kl">Meta FIRE ✎</div><div class="kv" id="f-meta">$2,100,000</div><div class="ks" id="f-meta-s">$7,000/mes × 4%</div></div>
       <div class="kpi-card" style="--accent:#c084fc"><div class="kl">Años para FIRE</div><div class="kv" id="f-yrs">—</div><div class="ks" id="f-yrs-s">—</div></div>
       <div class="kpi-card" style="--accent:#ffaa00"><div class="kl">Aporte mensual</div><div class="kv" id="f-ap">—</div><div class="ks" id="f-ap-s">25% del salario</div></div>
       <div class="kpi-card" style="--accent:#00ff88"><div class="kl">CELI disponible</div><div class="kv" id="f-celi-sp">—</div><div class="ks">Espacio restante</div></div>
@@ -717,7 +733,7 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
         <div class="pt">Simulador interactivo</div>
         <div class="slider-row"><span class="sl-lbl">Aporte mensual</span><input type="range" id="sim-ap" min="500" max="5000" step="50" value="2000" oninput="updateSim()"><span class="sl-val" id="sv-ap">$2,000</span></div>
         <div class="slider-row"><span class="sl-lbl">Retorno real anual</span><input type="range" id="sim-ret" min="2" max="12" step="0.5" value="7" oninput="updateSim()"><span class="sl-val" id="sv-ret">7.0%</span></div>
-        <div class="slider-row"><span class="sl-lbl">Meta FIRE ($)</span><input type="range" id="sim-meta" min="500000" max="5000000" step="50000" value="2100000" oninput="updateSim()"><span class="sl-val" id="sv-meta">$2.1M</span></div>
+        <div class="slider-row"><span class="sl-lbl">Meta FIRE ($)</span><input type="range" id="sim-meta" min="500000" max="5000000" step="50000" value="2100000" oninput="this.dataset.userTouched=1;updateSim()"><span class="sl-val" id="sv-meta">$2.1M</span></div>
         <div class="slider-row"><span class="sl-lbl">Gasto retiro/mes</span><input type="range" id="sim-gasto" min="2000" max="15000" step="250" value="7000" oninput="updateSim()"><span class="sl-val" id="sv-gasto">$7,000</span></div>
         <div class="divider"></div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center">
@@ -982,6 +998,15 @@ function getSalaryForRange(fromDate,toDate){
 })();
 SAL=getCurrentSalary();
 const FIRE={edad:33,meta:2100000,gasto:7000,tasa:0.04,capital:982.10,celiLimite:51500,rrspLimite:21420,retorno:0.07,aporte:2000,llegada:2019};
+// Cargar meta FIRE persistida
+(function loadFireMeta(){
+  const m=parseFloat(localStorage.getItem('ft_fire_meta')||'');
+  if(!isNaN(m)&&m>0)FIRE.meta=m;
+  const g=parseFloat(localStorage.getItem('ft_fire_gasto')||'');
+  if(!isNaN(g)&&g>0)FIRE.gasto=g;
+  const t=parseFloat(localStorage.getItem('ft_fire_tasa')||'');
+  if(!isNaN(t)&&t>0)FIRE.tasa=t/100;
+})();
 const CELI_LIMITES={2009:5000,2010:5000,2011:5000,2012:5000,2013:5500,2014:5500,2015:10000,2016:5500,2017:5500,2018:5500,2019:6000,2020:6000,2021:6000,2022:6000,2023:6500,2024:7000,2025:7000,2026:7000};
 
 // Categorías base (semilla la primera vez)
@@ -1148,9 +1173,34 @@ function calcFire(cap,aporteMes,retorno,meta,edad){
   for(let i=0;i<80;i++){c=c*(1+retorno)+aporteMes*12;a++;yr++;if(c>=meta)return{edad:a,anio:yr,capital:c}}
   return{edad:a,anio:yr,capital:c};
 }
+// Patrimonio FIRE = suma de aportes de tipo Inversión (no incluye Fondo Seguridad)
 function fireCapital(){
-  const v=fireTxs.reduce((s,t)=>s+(t.tipo==='Compra'?parseFloat(t.monto):-parseFloat(t.monto)),0);
-  return v||FIRE.capital;
+  if(!aportes||!aportes.length)return 0;
+  return aportes
+    .filter(a=>a.tipo==='Inversión')
+    .reduce((s,a)=>s+(parseFloat(a.monto)||0),0);
+}
+// Patrimonio CELI = aportes Inversión a cuenta TFSA/CELI
+function celiCapital(){
+  if(!aportes||!aportes.length)return 0;
+  return aportes
+    .filter(a=>a.tipo==='Inversión'&&a.cuenta==='TFSA/CELI')
+    .reduce((s,a)=>s+(parseFloat(a.monto)||0),0);
+}
+// Patrimonio RRSP = aportes Inversión a cuenta RRSP/REER
+function rrspCapital(){
+  if(!aportes||!aportes.length)return 0;
+  return aportes
+    .filter(a=>a.tipo==='Inversión'&&a.cuenta==='RRSP/REER')
+    .reduce((s,a)=>s+(parseFloat(a.monto)||0),0);
+}
+// Aportes YTD (este año) tipo Inversión
+function fireYTDAportes(){
+  if(!aportes||!aportes.length)return 0;
+  const yr=new Date().getFullYear();
+  return aportes
+    .filter(a=>a.tipo==='Inversión'&&a.date&&a.date.startsWith(String(yr)))
+    .reduce((s,a)=>s+(parseFloat(a.monto)||0),0);
 }
 
 // ══════════════════════════════════════════
@@ -2010,36 +2060,69 @@ function renderFireAll(){
   else renderOverview();
 }
 function renderOverview(){
-  const cap=fireCapital(),meta=FIRE.meta,pct=cap/meta*100;
-  const inv=VASIJAS.find(v=>v.key==='inv');
-  const aporteCalc=SAL*inv.pct/100;
-  const res=calcFire(cap,FIRE.aporte,FIRE.retorno,meta,FIRE.edad);
-  const celiVal=fireTxs.filter(t=>t.cuenta==='TFSA/CELI'&&t.tipo==='Compra').reduce((s,t)=>s+t.monto,0)||cap;
-  const rrspVal=fireTxs.filter(t=>t.cuenta==='RRSP/REER'&&t.tipo==='Compra').reduce((s,t)=>s+t.monto,0);
-  const ytd=fireTxs.reduce((s,t)=>t.precioAct&&t.precio?s+((t.precioAct-t.precio)/t.precio)*t.monto:s,0);
-  $('f-pat').textContent=fmt(cap);$('f-meta').textContent=fmtM(meta);
-  $('f-yrs').textContent=res.edad-FIRE.edad;$('f-yrs-s').textContent='Edad '+res.edad+' — '+res.anio;
-  $('f-ap').textContent=fmtI(aporteCalc);$('f-ap-s').textContent=`${inv.pct}% del salario`;
+  // ── Datos reales ──
+  const cap=fireCapital();              // Patrimonio = aportes históricos Inversión
+  const celiVal=celiCapital();          // CELI = Inversión + cuenta TFSA/CELI
+  const rrspVal=rrspCapital();          // RRSP = Inversión + cuenta RRSP/REER
+  const ytdAportes=fireYTDAportes();    // Aportado este año
+  const meta=FIRE.meta;
+  const pct=meta>0?(cap/meta)*100:0;
+  const inv=VASIJAS.find(v=>v.key==='inv')||{pct:25};
+  const aporteMensualMeta=SAL*inv.pct/100;  // Mantener fijo: 25% del salario actual
+  const res=calcFire(cap,aporteMensualMeta,FIRE.retorno,meta,FIRE.edad);
+
+  // ── KPIs principales ──
+  $('f-pat').textContent=fmt(cap);
+  $('f-meta').textContent=fmtM(meta);
+  $('f-meta-s').textContent=`${fmtI(FIRE.gasto)}/mes × ${(FIRE.tasa*100).toFixed(1)}%`;
+  $('f-yrs').textContent=Math.max(res.edad-FIRE.edad,0);
+  $('f-yrs-s').textContent=cap>=meta?'🔥 ¡FIRE alcanzado!':`Edad ${res.edad} — ${res.anio}`;
+  $('f-ap').textContent=fmtI(aporteMensualMeta);
+  if($('f-ap-s'))$('f-ap-s').textContent=`${inv.pct}% del salario`;
   $('f-celi-sp').textContent=fmtI(Math.max(FIRE.celiLimite-celiVal,0));
-  $('f-ytd').textContent=(ytd>=0?'+':'')+fmt(ytd);
+  $('f-ytd').textContent=(ytdAportes>=0?'+':'')+fmt(ytdAportes);
+
+  // ── Barra de progreso ──
   $('fp-pct').textContent=pct.toFixed(2)+'%';
   $('fp-bar').style.width=Math.min(pct,100)+'%';
-  [['ms10',10],['ms25',25],['ms50',50],['ms75',75],['ms100',100]].forEach(([id,m])=>$(id)&&$(id).classList.toggle('done',pct>=m));
-  $('cd-yrs').textContent=res.edad-FIRE.edad;$('cd-dt').textContent='Edad '+res.edad+' — Año '+res.anio;
-  $('ov-celi').textContent=fmt(celiVal);$('ov-celi-sp').textContent='Espacio: '+fmtI(Math.max(FIRE.celiLimite-celiVal,0));
+  // Actualizar etiquetas de hitos según meta dinámica
+  const milestones=[['ms10',0.10],['ms25',0.25],['ms50',0.50],['ms75',0.75],['ms100',1.00]];
+  milestones.forEach(([id,p])=>{
+    const el=$(id);if(!el)return;
+    el.classList.toggle('done',pct>=(p*100));
+    if(p<1){
+      el.innerHTML=`${(p*100).toFixed(0)}%<br>${fmtM(meta*p)}`;
+    }else{
+      el.innerHTML=`🔥 FIRE<br>${fmtM(meta)}`;
+    }
+  });
+
+  // ── Cuenta regresiva ──
+  $('cd-yrs').textContent=Math.max(res.edad-FIRE.edad,0);
+  $('cd-dt').textContent=cap>=meta?'¡Lo lograste! 🎉':`Edad ${res.edad} — Año ${res.anio}`;
+
+  // ── Cards CELI/RRSP ──
+  $('ov-celi').textContent=fmt(celiVal);
+  $('ov-celi-sp').textContent='Espacio: '+fmtI(Math.max(FIRE.celiLimite-celiVal,0));
   $('ov-celi-bar').style.width=Math.min((celiVal/FIRE.celiLimite)*100,100)+'%';
-  $('ov-rrsp').textContent=fmt(rrspVal);$('ov-rrsp-bar').style.width=Math.min((rrspVal/FIRE.rrspLimite)*100,100)+'%';
-  const scs=[{key:'conservador',idKey:'con',r:0.035,a:1000},{key:'base',idKey:'base',r:0.05,a:1500},{key:'optimista',idKey:'opt',r:0.07,a:2000}];
+  $('ov-rrsp').textContent=fmt(rrspVal);
+  $('ov-rrsp-bar').style.width=Math.min((rrspVal/FIRE.rrspLimite)*100,100)+'%';
+
+  // ── Escenarios ──
+  const scs=[{idKey:'con',r:0.035,a:1000},{idKey:'base',r:0.05,a:1500},{idKey:'opt',r:0.07,a:2000}];
   scs.forEach(s=>{
     const r=calcFire(cap,s.a,s.r,meta,FIRE.edad);
     const el=$('sca-'+s.idKey);
-    if(el)el.textContent='Edad '+r.edad;
+    if(el)el.textContent=cap>=meta?'¡FIRE!':'Edad '+r.edad;
   });
-  const etfT={};fireTxs.forEach(t=>{if(t.tipo==='Compra')etfT[t.etf]=(etfT[t.etf]||0)+parseFloat(t.monto)});
-  if(!Object.keys(etfT).length)etfT['XEQT']=982.79;
-  const etfTotal=Object.values(etfT).reduce((a,b)=>a+b,0);
-  const ETF_COLORS={'XEQT':'#00ff88','VFV':'#4d9fff','ZAG':'#c084fc','VEQT':'#ffaa00','XIU':'#ff6b6b','Efectivo':'#888','Otro':'#555'};
-  $('etf-dist').innerHTML=Object.entries(etfT).map(([e,v])=>{const p=(v/etfTotal*100).toFixed(1),c=ETF_COLORS[e]||'#888';return`<div class="etfr"><span class="etfn" style="color:${c}">${e}</span><div style="flex:1"><div class="bg" style="height:4px"><div class="bf" style="width:${p}%;background:${c}"></div></div></div><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:${c};min-width:36px;text-align:right">${p}%</span><span class="etfv">${fmt(v)}</span></div>`}).join('');
+
+  // ── ETF Distribution (placeholder hasta implementar Portafolio) ──
+  const etfDist=$('etf-dist');
+  if(etfDist){
+    etfDist.innerHTML='<div style="color:#444;font-size:10px;padding:8px 0;text-align:center">Próximamente — disponible cuando implementemos Portafolio</div>';
+  }
+
+  // ── Simulador ──
   updateSim();
 }
 function renderCeli(){
@@ -2152,8 +2235,15 @@ function renderSeguimiento(){
   charts.seg=new Chart($('segChart'),{type:'line',data:{labels:sorted.map(s=>s.mes),datasets:[{label:'Patrimonio',data:sorted.map(s=>s.pat),borderColor:'#00ff88',backgroundColor:'#00ff8808',fill:true,tension:0.4,pointRadius:4,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#444',font:{size:9}},grid:{color:'#1a1a2e'}},y:{ticks:{color:'#444',font:{size:9},callback:v=>fmtM(v)},grid:{color:'#1a1a2e'},beginAtZero:false}}}});
 }
 function updateSim(){
+  // Si el slider de meta no fue tocado todavía, usar FIRE.meta como default
+  const simMetaEl=$('sim-meta');
+  if(simMetaEl&&!simMetaEl.dataset.userTouched){
+    simMetaEl.value=FIRE.meta;
+    $('sv-meta').textContent=fmtM(FIRE.meta);
+  }
   const ap=parseFloat($('sim-ap').value)||2000,ret=parseFloat($('sim-ret').value)||7;
-  const mt=parseFloat($('sim-meta').value)||2100000,gs=parseFloat($('sim-gasto').value)||7000;
+  const mt=parseFloat($('sim-meta').value)||FIRE.meta;
+  const gs=parseFloat($('sim-gasto').value)||7000;
   $('sv-ap').textContent=fmtI(ap);$('sv-ret').textContent=ret.toFixed(1)+'%';
   $('sv-meta').textContent=fmtM(mt);$('sv-gasto').textContent=fmtI(gs);
   const cap=fireCapital();const res=calcFire(cap,ap,ret/100,mt,FIRE.edad);
@@ -2167,6 +2257,42 @@ function setScenario(k,el){
   document.querySelectorAll('.sc-card').forEach(c=>c.classList.remove('active'));el.classList.add('active');
   const sc={conservador:{a:1000,r:3.5},base:{a:1500,r:5},optimista:{a:2000,r:7}};
   $('sim-ap').value=sc[k].a;$('sim-ret').value=sc[k].r;updateSim();
+}
+
+// ── EDITAR META FIRE ──
+function editFireMeta(){
+  $('fm-gasto').value=FIRE.gasto;
+  $('fm-tasa').value=(FIRE.tasa*100).toFixed(1);
+  $('fm-meta').value='';
+  om('mo-fire-meta');
+}
+function saveFireMeta(){
+  const metaDirect=parseFloat($('fm-meta').value);
+  const gasto=parseFloat($('fm-gasto').value);
+  const tasa=parseFloat($('fm-tasa').value);
+  let nuevaMeta=null,nuevoGasto=FIRE.gasto,nuevaTasa=FIRE.tasa;
+  if(!isNaN(metaDirect)&&metaDirect>0){
+    nuevaMeta=metaDirect;
+    // Si solo dieron meta, mantener gasto/tasa actuales
+    if(!isNaN(gasto)&&gasto>0)nuevoGasto=gasto;
+    if(!isNaN(tasa)&&tasa>0)nuevaTasa=tasa/100;
+  }else if(!isNaN(gasto)&&gasto>0&&!isNaN(tasa)&&tasa>0){
+    // Calcular meta = gasto anual / tasa
+    nuevaMeta=(gasto*12)/(tasa/100);
+    nuevoGasto=gasto;
+    nuevaTasa=tasa/100;
+  }else{
+    toast('Ingresa gasto+tasa o meta directa','warn');return;
+  }
+  FIRE.meta=Math.round(nuevaMeta);
+  FIRE.gasto=nuevoGasto;
+  FIRE.tasa=nuevaTasa;
+  localStorage.setItem('ft_fire_meta',FIRE.meta);
+  localStorage.setItem('ft_fire_gasto',FIRE.gasto);
+  localStorage.setItem('ft_fire_tasa',(FIRE.tasa*100).toFixed(2));
+  cm('mo-fire-meta');
+  renderOverview();
+  toast(`Meta FIRE: ${fmtM(FIRE.meta)} ✓`,'ok');
 }
 
 // ACCIONES
