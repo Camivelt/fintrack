@@ -359,7 +359,7 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
   </div>
   <div class="fg">
     <div class="fgf"><label class="fl">Nombre</label><input class="fi" id="cat-name" placeholder="ej. Mercado, Netflix..."/></div>
-    <div><label class="fl">Presupuesto actual ($)</label><input class="fi" id="cat-budget" type="number" min="0" step="0.01"/></div>
+    <div><label class="fl">Presupuesto base ($)</label><input class="fi" id="cat-budget" type="number" min="0" step="0.01"/></div>
     <div><label class="fl">Tipo</label><select class="fs" id="cat-fixed">
       <option value="false">Variable</option>
       <option value="true">Fijo</option>
@@ -380,6 +380,7 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
 
   <div style="background:#c084fc08;border:1px solid #c084fc30;border-radius:5px;padding:12px;margin-top:10px" id="cat-budget-hist-wrap">
     <div class="slbl" style="color:#c084fc;margin-bottom:8px">💰 HISTORIAL DE PRESUPUESTO</div>
+    <p style="font-size:10px;color:#666;margin-bottom:8px;line-height:1.4">El presupuesto base aplica desde el mes de inicio. Si el monto cambia en algún mes futuro, agrégalo aquí. Ej: base $200, cambio AGO 2026 → $250 significa: $200 hasta julio, $250 desde agosto.</p>
     <div id="cat-budget-history" style="max-height:140px;overflow-y:auto;margin-bottom:10px"></div>
     <div class="fg">
       <div><label class="fl">Desde mes</label><input class="fi" id="cat-bh-mes" type="month"/></div>
@@ -1040,18 +1041,23 @@ function catActiveAt(cat,mes){
   if(hasta&&mes>hasta)return false;
   return true;
 }
-// Presupuesto vigente en un mes dado (lee budgetHistory si existe, si no usa cat.budget)
+// Presupuesto vigente en un mes dado.
+// Lógica:
+//   - cat.budget = presupuesto inicial / por defecto
+//   - budgetHistory = lista de cambios {mes, monto} indicando "desde tal mes pasa a ser tal monto"
+//   - Para cualquier mes M: tomar el último cambio cuya fecha sea <= M.
+//     Si no hay ninguno (M < primer cambio o sin historial) → usar cat.budget
 function catBudgetAt(cat,mes){
   if(!catActiveAt(cat,mes))return 0;
+  const baseBudget=parseFloat(cat.budget)||0;
   const hist=cat.budgetHistory||[];
-  if(!hist.length)return parseFloat(cat.budget)||0;
-  const sorted=[...hist].sort((a,b)=>a.mes>b.mes?1:-1);
-  let result=parseFloat(sorted[0].monto)||parseFloat(cat.budget)||0;
-  for(const h of sorted){
-    if(h.mes<=mes)result=parseFloat(h.monto)||result;
-    else break;
-  }
-  return result;
+  if(!hist.length)return baseBudget;
+  // Buscar el cambio más reciente cuya fecha <= mes
+  const aplicables=hist.filter(h=>h.mes<=mes);
+  if(!aplicables.length)return baseBudget;
+  // Tomar el de fecha más alta (el más reciente entre los aplicables)
+  const latest=aplicables.reduce((max,h)=>h.mes>max.mes?h:max,aplicables[0]);
+  return parseFloat(latest.monto)||baseBudget;
 }
 // Suma de presupuesto para un rango (mes a mes, exacto)
 function catBudgetForRange(cat,fromDate,toDate){
