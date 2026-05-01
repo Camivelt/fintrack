@@ -932,15 +932,18 @@ function getCurrentSalary(){
 }
 function getSalaryAt(mes){
   // mes en formato 'YYYY-MM'
+  // Buscar el último cambio cuya fecha sea <= mes pedido
+  // Si no hay ninguno aplicable, usar el más antiguo del historial (porque no se puede ir más atrás)
   if(!salaryHistory.length)return 4940;
   const sorted=[...salaryHistory].sort((a,b)=>a.mes>b.mes?1:-1);
-  // Buscar el último cambio que sea <= al mes solicitado
-  let result=parseFloat(sorted[0].monto)||4940;
-  for(const s of sorted){
-    if(s.mes<=mes)result=parseFloat(s.monto)||result;
-    else break;
+  const aplicables=sorted.filter(s=>s.mes<=mes);
+  if(!aplicables.length){
+    // Mes pedido es ANTERIOR al primer registro: usamos el más antiguo como aproximación
+    return parseFloat(sorted[0].monto)||4940;
   }
-  return result;
+  // Tomar el de fecha más alta entre aplicables (el más reciente)
+  const latest=aplicables.reduce((max,s)=>s.mes>max.mes?s:max,aplicables[0]);
+  return parseFloat(latest.monto)||4940;
 }
 function getSalaryForRange(fromDate,toDate){
   // Suma exacta mes a mes según historial
@@ -1177,11 +1180,21 @@ function migrateCatsVigencia(){
   if(!firstMes)firstMes=new Date().toISOString().substring(0,7);
   let migrated=false;
   CATS.forEach(c=>{
-    if(c.desde===undefined){c.desde=firstMes;migrated=true}
-    if(c.hasta===undefined)c.hasta=null;
-    if(!c.budgetHistory)c.budgetHistory=[];
-    // Normalizar tipos
-    if(c.hasta==='')c.hasta=null;
+    // 'desde' falta: cubre undefined, null, '', false, 0
+    if(!c.desde||typeof c.desde!=='string'||!c.desde.match(/^\d{4}-\d{2}$/)){
+      c.desde=firstMes;
+      migrated=true;
+    }
+    // 'hasta' normalizado: '' o undefined → null
+    if(c.hasta===undefined||c.hasta===''||c.hasta===false){
+      c.hasta=null;
+      migrated=true;
+    }
+    // 'budgetHistory' debe ser array
+    if(!Array.isArray(c.budgetHistory)){
+      c.budgetHistory=[];
+      migrated=true;
+    }
   });
   if(migrated)saveCatsLocal();
 }
@@ -1489,7 +1502,8 @@ function confirmDelCat(){
   // Asegurar categoría "Otros"
   let otros=CATS.find(x=>x.key==='otros');
   if(!otros){
-    otros={key:'otros',label:'Otros',budget:50,color:'#888',fixed:false,archived:false};
+    const firstMes=expenses.length?expenses.map(e=>e.date).sort()[0].substring(0,7):new Date().toISOString().substring(0,7);
+    otros={key:'otros',label:'Otros',budget:50,color:'#888',fixed:false,archived:false,desde:firstMes,hasta:null,budgetHistory:[]};
     CATS.push(otros);
   }else if(otros.archived){
     otros.archived=false;
@@ -1563,11 +1577,14 @@ function restoreBaseCats(){
     expenses.forEach(e=>{if(e.cat===orphan.key)e.cat=base.key});
     CATS=CATS.filter(c=>c.key!==orphan.key);
   });
+  // Helper para preparar una cat semilla con los campos nuevos
+  const firstMes=expenses.length?expenses.map(e=>e.date).sort()[0].substring(0,7):new Date().toISOString().substring(0,7);
+  const seedToCat=s=>Object.assign(JSON.parse(JSON.stringify(s)),{desde:firstMes,hasta:null,budgetHistory:[]});
   // Agregar las que faltan (con valores semilla — preserva key original)
-  missing.forEach(s=>CATS.push(JSON.parse(JSON.stringify(s))));
+  missing.forEach(s=>CATS.push(seedToCat(s)));
   // Agregar las base que se necesitan por duplicado
   duplicates.forEach(({base})=>{
-    if(!CATS.find(c=>c.key===base.key))CATS.push(JSON.parse(JSON.stringify(base)));
+    if(!CATS.find(c=>c.key===base.key))CATS.push(seedToCat(base));
   });
   // Reactivar archivadas que sean base
   archivedBase.forEach(c=>{c.archived=false});
