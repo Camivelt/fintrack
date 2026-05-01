@@ -1977,8 +1977,12 @@ function renderOverview(){
   $('ov-celi').textContent=fmt(celiVal);$('ov-celi-sp').textContent='Espacio: '+fmtI(Math.max(FIRE.celiLimite-celiVal,0));
   $('ov-celi-bar').style.width=Math.min((celiVal/FIRE.celiLimite)*100,100)+'%';
   $('ov-rrsp').textContent=fmt(rrspVal);$('ov-rrsp-bar').style.width=Math.min((rrspVal/FIRE.rrspLimite)*100,100)+'%';
-  const scs=[{key:'conservador',r:0.035,a:1000},{key:'base',r:0.05,a:1500},{key:'optimista',r:0.07,a:2000}];
-  scs.forEach(s=>{const r=calcFire(cap,s.a,s.r,meta,FIRE.edad);$('sca-'+s.key).textContent='Edad '+r.edad});
+  const scs=[{key:'conservador',idKey:'con',r:0.035,a:1000},{key:'base',idKey:'base',r:0.05,a:1500},{key:'optimista',idKey:'opt',r:0.07,a:2000}];
+  scs.forEach(s=>{
+    const r=calcFire(cap,s.a,s.r,meta,FIRE.edad);
+    const el=$('sca-'+s.idKey);
+    if(el)el.textContent='Edad '+r.edad;
+  });
   const etfT={};fireTxs.forEach(t=>{if(t.tipo==='Compra')etfT[t.etf]=(etfT[t.etf]||0)+parseFloat(t.monto)});
   if(!Object.keys(etfT).length)etfT['XEQT']=982.79;
   const etfTotal=Object.values(etfT).reduce((a,b)=>a+b,0);
