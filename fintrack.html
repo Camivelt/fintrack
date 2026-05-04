@@ -288,6 +288,66 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
 
 <!-- MODALS -->
 
+<!-- Modal: Gestor de Productos -->
+<div class="mo" id="mo-productos"><div class="md" style="max-width:680px">
+  <div class="mt2">📦 Catálogo de productos</div>
+  <p style="font-size:11px;color:#666;margin-bottom:12px">Aquí gestionas los productos de inversión disponibles. Pre-cargados los más populares de Canadá. Puedes editar, eliminar o agregar tuyos.</p>
+  <div id="productos-list" style="max-height:340px;overflow-y:auto;margin-bottom:14px"></div>
+  <div style="background:#00ff8808;border:1px solid #00ff8830;border-radius:5px;padding:12px">
+    <div class="slbl" style="color:#00ff88;margin-bottom:8px">+ AGREGAR PRODUCTO</div>
+    <div class="fg">
+      <div><label class="fl">Ticker (ej. XEQT)</label><input class="fi" id="prod-ticker" placeholder="XEQT" maxlength="10"/></div>
+      <div><label class="fl">Nombre</label><input class="fi" id="prod-nombre" placeholder="iShares Core Equity ETF"/></div>
+      <div class="fgf"><label class="fl">Clase de activo</label><select class="fi" id="prod-clase"></select></div>
+    </div>
+    <button class="btn-tiny" onclick="addProducto()" style="margin-top:8px;border-color:#00ff88;color:#00ff88;padding:5px 10px">+ Agregar producto</button>
+  </div>
+  <div class="ma"><button class="btn-cancel" onclick="cm('mo-productos')">Cerrar</button></div>
+</div></div>
+
+<!-- Modal: Registrar Posición -->
+<div class="mo" id="mo-pos"><div class="md" style="max-width:520px">
+  <div class="mt2" id="pos-modal-title">📊 Registrar posición</div>
+  <p style="font-size:11px;color:#666;margin-bottom:12px">Una posición = qué tienes comprado de un producto en una cuenta específica. Si tienes XEQT en TFSA y RRSP, son 2 posiciones.</p>
+  <div class="fg">
+    <div><label class="fl">Producto</label><select class="fi" id="pos-producto"></select></div>
+    <div><label class="fl">Cuenta</label><select class="fi" id="pos-cuenta">
+      <option value="TFSA/CELI">TFSA / CELI</option>
+      <option value="RRSP/REER">RRSP / REER</option>
+      <option value="Cuenta Propia">Cuenta Propia (no registrada)</option>
+      <option value="FHSA">FHSA (Primera vivienda)</option>
+      <option value="Otro">Otro</option>
+    </select></div>
+    <div><label class="fl">Unidades / Cantidad</label><input class="fi" id="pos-unidades" type="number" min="0" step="0.0001" placeholder="ej. 23"/></div>
+    <div><label class="fl">Costo total ($)</label><input class="fi" id="pos-costo" type="number" min="0" step="0.01" placeholder="ej. 747.50"/></div>
+    <div><label class="fl">Precio actual ($)</label><input class="fi" id="pos-precio" type="number" min="0" step="0.0001" placeholder="ej. 33.20"/></div>
+    <div><label class="fl">Fecha del precio</label><input class="fi" id="pos-fecha" type="date"/></div>
+  </div>
+  <p style="font-size:10px;color:#444;margin-top:10px;line-height:1.4">💡 Costo promedio = Costo total / Unidades. Rendimiento = (Precio actual × Unidades) − Costo total.</p>
+  <div class="ma">
+    <button class="btn-cancel" onclick="cm('mo-pos')">Cancelar</button>
+    <button class="btn-ok" onclick="savePosicion()">Guardar</button>
+  </div>
+</div></div>
+
+<!-- Modal: Actualizar Precio -->
+<div class="mo" id="mo-precio"><div class="md" style="max-width:480px">
+  <div class="mt2">💲 Actualizar precio</div>
+  <p style="font-size:11px;color:#666;margin-bottom:12px" id="precio-info">Producto: —</p>
+  <div class="fg">
+    <div><label class="fl">Nuevo precio ($)</label><input class="fi" id="precio-nuevo" type="number" min="0" step="0.0001" placeholder="33.20"/></div>
+    <div><label class="fl">Fecha</label><input class="fi" id="precio-fecha" type="date"/></div>
+  </div>
+  <div id="precio-historial-wrap" style="margin-top:12px;background:#1a1a2e30;padding:8px;border-radius:5px">
+    <div class="slbl" style="color:#888;margin-bottom:6px">📈 HISTORIAL DE PRECIOS</div>
+    <div id="precio-historial" style="max-height:160px;overflow-y:auto"></div>
+  </div>
+  <div class="ma">
+    <button class="btn-cancel" onclick="cm('mo-precio')">Cancelar</button>
+    <button class="btn-ok" onclick="savePrecio()">Guardar precio</button>
+  </div>
+</div></div>
+
 <!-- Modal: Editar Meta FIRE -->
 <div class="mo" id="mo-fire-meta"><div class="md">
   <div class="mt2">🔥 Editar Meta FIRE</div>
@@ -848,30 +908,35 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
 
   <div class="fire-subpage" id="fp-portafolio">
     <div class="kpi-row k4">
-      <div class="kpi-card" style="--accent:#00ff88"><div class="kl">Patrimonio total</div><div class="kv" id="po-pat">—</div><div class="ks">Todas las cuentas</div></div>
-      <div class="kpi-card" style="--accent:#4d9fff"><div class="kl">Total invertido</div><div class="kv" id="po-inv">—</div><div class="ks">Capital aportado</div></div>
-      <div class="kpi-card" style="--accent:#ffaa00"><div class="kl">Rendimiento</div><div class="kv" id="po-rend">—</div><div class="ks">Ganancia / Pérdida</div></div>
-      <div class="kpi-card" style="--accent:#c084fc"><div class="kl">Mejor activo</div><div class="kv" id="po-best">XEQT</div><div class="ks">Por valor actual</div></div>
+      <div class="kpi-card" style="--accent:#00ff88"><div class="kl">Valor actual</div><div class="kv" id="p-total">—</div><div class="ks">Todas las posiciones</div></div>
+      <div class="kpi-card" style="--accent:#4d9fff"><div class="kl">Total invertido</div><div class="kv" id="p-costo">—</div><div class="ks">Capital aportado</div></div>
+      <div class="kpi-card" style="--accent:#ffaa00"><div class="kl">Rendimiento $</div><div class="kv" id="p-rend">—</div><div class="ks">Ganancia / Pérdida</div></div>
+      <div class="kpi-card" style="--accent:#c084fc"><div class="kl">Rendimiento %</div><div class="kv" id="p-rend-pct">—</div><div class="ks" id="p-num">0 posiciones</div></div>
     </div>
     <div class="g2">
       <div class="panel">
         <div class="pt">
-          <span>Registro de transacciones</span>
-          <button class="btn-b" onclick="om('mo-inv')">+ Nueva inversión</button>
+          <span>Tus posiciones</span>
+          <div style="display:flex;gap:6px">
+            <button class="btn-b" onclick="openProductosModal()" style="background:#00ff8815;border-color:#00ff88;color:#00ff88">📦 Productos</button>
+            <button class="btn-b" onclick="openPosModal()">+ Nueva posición</button>
+          </div>
         </div>
-        <div class="txs" style="max-height:300px">
-          <table class="tbl"><thead><tr><th>Fecha</th><th>Cuenta</th><th>ETF</th><th>Tipo</th><th style="text-align:right">Monto</th><th style="text-align:right">Rend.%</th><th></th></tr></thead>
-          <tbody id="po-tx-body"></tbody></table>
+        <div class="txs" style="max-height:420px">
+          <table class="tbl"><thead><tr><th>Producto</th><th>Cuenta</th><th>Clase</th><th style="text-align:right">Unidades</th><th style="text-align:right">Costo prom.</th><th style="text-align:right">Precio actual</th><th style="text-align:right">Valor</th><th style="text-align:right">Rend.</th><th></th></tr></thead>
+          <tbody id="pos-body"></tbody></table>
         </div>
       </div>
       <div class="panel">
-        <div class="pt">Distribución del portafolio</div>
-        <div id="po-etf-dist"></div>
+        <div class="pt">📊 Distribución por clase</div>
+        <div id="p-dist-clase" style="margin-top:10px"></div>
         <div class="divider"></div>
-        <div class="slbl">REBALANCEO (XEQT 80% / VFV 20%)</div>
-        <div id="po-rebalanceo"></div>
-        <div class="divider"></div>
-        <div class="cw-lg"><canvas id="portChart"></canvas></div>
+        <div class="slbl">💡 CONSEJOS</div>
+        <div style="font-size:10px;color:#666;line-height:1.5;margin-top:6px">
+          <p style="margin-bottom:6px"><strong style="color:#00ff88">Diversificación:</strong> Tener varias clases reduce riesgo. Un portafolio FIRE típico es 80-100% RV con algo de RF.</p>
+          <p style="margin-bottom:6px"><strong style="color:#4d9fff">Actualización:</strong> Actualiza precios al menos 1× al mes para tener datos frescos. Click en 💲 al lado de cada posición.</p>
+          <p><strong style="color:#ffaa00">CELI primero:</strong> Maximiza TFSA antes que cuenta no registrada — las ganancias salen libres de impuestos.</p>
+        </div>
       </div>
     </div>
   </div>
@@ -1044,12 +1109,106 @@ const COLORS=['#ff6b6b','#ffaa00','#ffee55','#00ff88','#55ccff','#4d9fff','#c084
 // State
 let CATS=[],VASIJAS=[];
 let expenses=[],fireTxs=[],seguimiento=[],aportes=[],curMonth='';
+let productos=[],posiciones=[],historialPrecios=[];
+let editingProductoKey=null,editingPosicionKey=null;
 let catF='month',trendF='weekly',trackerOpen=true,projRetorno=0.07;
 let charts={},showArchived=false;
 let editingCatKey=null,pendingDelCatKey=null;
 // Período activo: 'month' (mes individual), 'q1','q2','q3','q4', 'year', 'custom'
 let curPeriod='month';
 let customRange={from:null,to:null};
+
+// ══════════════════════════════════════════
+// CATÁLOGO DE PRODUCTOS Y CLASES DE ACTIVO
+// ══════════════════════════════════════════
+const CLASES_ACTIVO=[
+  {key:'rv',label:'Renta Variable',emoji:'📈',color:'#00ff88',desc:'ETFs de acciones, acciones individuales'},
+  {key:'rf',label:'Renta Fija',emoji:'📊',color:'#4d9fff',desc:'Bonos, GIC, ETFs de bonos'},
+  {key:'crypto',label:'Crypto',emoji:'₿',color:'#ffaa00',desc:'Bitcoin, Ethereum, otras crypto'},
+  {key:'metales',label:'Metales preciosos',emoji:'🥇',color:'#ffee55',desc:'Oro, plata, ETFs de metales'},
+  {key:'realestate',label:'Real Estate',emoji:'🏠',color:'#c084fc',desc:'REITs, propiedad directa'},
+  {key:'efectivo',label:'Efectivo',emoji:'💰',color:'#33aa66',desc:'HISA, money market'},
+  {key:'otro',label:'Otro',emoji:'🎲',color:'#888',desc:'Otros activos'}
+];
+const SEED_PRODUCTOS=[
+  {key:'xeqt',ticker:'XEQT',nombre:'iShares Core Equity ETF Portfolio',clase:'rv'},
+  {key:'veqt',ticker:'VEQT',nombre:'Vanguard All-Equity ETF Portfolio',clase:'rv'},
+  {key:'vfv',ticker:'VFV',nombre:'Vanguard S&P 500 Index ETF',clase:'rv'},
+  {key:'xaw',ticker:'XAW',nombre:'iShares Core MSCI All Country World ex Canada',clase:'rv'},
+  {key:'vcn',ticker:'VCN',nombre:'Vanguard FTSE Canada All Cap Index',clase:'rv'},
+  {key:'zag',ticker:'ZAG',nombre:'BMO Aggregate Bond Index ETF',clase:'rf'},
+  {key:'vab',ticker:'VAB',nombre:'Vanguard Canadian Aggregate Bond Index',clase:'rf'},
+  {key:'zgb',ticker:'ZGB',nombre:'BMO Government Bond Index ETF',clase:'rf'},
+  {key:'btc',ticker:'BTC',nombre:'Bitcoin',clase:'crypto'},
+  {key:'eth',ticker:'ETH',nombre:'Ethereum',clase:'crypto'},
+  {key:'gld',ticker:'GLD',nombre:'Gold (Oro físico/ETF)',clase:'metales'},
+  {key:'hisa',ticker:'HISA',nombre:'High Interest Savings Account',clase:'efectivo'}
+];
+function getClase(key){return CLASES_ACTIVO.find(c=>c.key===key)||CLASES_ACTIVO[CLASES_ACTIVO.length-1]}
+function getProducto(key){return productos.find(p=>p.key===key)}
+function loadProductosLocal(){
+  const sp=localStorage.getItem('ft_productos');
+  productos=sp?JSON.parse(sp):JSON.parse(JSON.stringify(SEED_PRODUCTOS));
+  saveProductosLocal();
+}
+function saveProductosLocal(){localStorage.setItem('ft_productos',JSON.stringify(productos))}
+function loadPosicionesLocal(){
+  const sp=localStorage.getItem('ft_posiciones');
+  posiciones=sp?JSON.parse(sp):[];
+}
+function savePosicionesLocal(){localStorage.setItem('ft_posiciones',JSON.stringify(posiciones))}
+function loadHistorialPreciosLocal(){
+  const sh=localStorage.getItem('ft_historial_precios');
+  historialPrecios=sh?JSON.parse(sh):[];
+}
+function saveHistorialPreciosLocal(){localStorage.setItem('ft_historial_precios',JSON.stringify(historialPrecios))}
+
+// Cálculos de portafolio
+function posCostoPromedio(pos){
+  const u=parseFloat(pos.unidades)||0;
+  const c=parseFloat(pos.costoTotal)||0;
+  return u>0?c/u:0;
+}
+function posValorActual(pos){
+  const u=parseFloat(pos.unidades)||0;
+  const p=parseFloat(pos.precioActual)||0;
+  return u*p;
+}
+function posRendimiento(pos){
+  const valor=posValorActual(pos);
+  const costo=parseFloat(pos.costoTotal)||0;
+  return valor-costo;
+}
+function posRendimientoPct(pos){
+  const costo=parseFloat(pos.costoTotal)||0;
+  const rend=posRendimiento(pos);
+  return costo>0?(rend/costo)*100:0;
+}
+function portafolioTotal(){
+  return posiciones.reduce((s,p)=>s+posValorActual(p),0);
+}
+function portafolioCostoTotal(){
+  return posiciones.reduce((s,p)=>s+(parseFloat(p.costoTotal)||0),0);
+}
+function portafolioRendTotal(){
+  return portafolioTotal()-portafolioCostoTotal();
+}
+function portafolioRendPct(){
+  const costo=portafolioCostoTotal();
+  return costo>0?(portafolioRendTotal()/costo)*100:0;
+}
+// Distribución por clase de activo
+function distribucionPorClase(){
+  const dist={};
+  posiciones.forEach(pos=>{
+    const prod=getProducto(pos.productoKey);
+    if(!prod)return;
+    const claseKey=prod.clase;
+    const valor=posValorActual(pos);
+    dist[claseKey]=(dist[claseKey]||0)+valor;
+  });
+  return dist;
+}
 
 // ══════════════════════════════════════════
 // UTILS
@@ -1326,6 +1485,38 @@ async function loadSheets(){
       })).filter(s=>s.mes);
       seguimiento.sort((a,b)=>a.mes>b.mes?1:-1);
       localStorage.setItem('ft_seg',JSON.stringify(seguimiento));
+    }
+    // Productos del catálogo
+    if(j.productos && Array.isArray(j.productos) && j.productos.length){
+      productos=j.productos.map(p=>({
+        key:p.key||p.Key||'',
+        ticker:p.ticker||p.Ticker||'',
+        nombre:p.nombre||p.Nombre||'',
+        clase:p.clase||p.Clase||'otro'
+      })).filter(p=>p.key);
+      saveProductosLocal();
+    }
+    // Posiciones del portafolio
+    if(j.posiciones && Array.isArray(j.posiciones)){
+      posiciones=j.posiciones.map(p=>({
+        key:p.key||p.Key||'',
+        productoKey:p.productoKey||p.ProductoKey||'',
+        cuenta:p.cuenta||p.Cuenta||'',
+        unidades:parseFloat(p.unidades||p.Unidades)||0,
+        costoTotal:parseFloat(p.costoTotal||p.CostoTotal)||0,
+        precioActual:parseFloat(p.precioActual||p.PrecioActual)||0,
+        fechaUltimoPrecio:p.fechaUltimoPrecio||p.FechaUltimoPrecio||''
+      })).filter(p=>p.key&&p.productoKey);
+      savePosicionesLocal();
+    }
+    // Historial de precios
+    if(j.historialPrecios && Array.isArray(j.historialPrecios)){
+      historialPrecios=j.historialPrecios.map(h=>({
+        productoKey:h.productoKey||h.ProductoKey||'',
+        fecha:h.fecha||h.Fecha||'',
+        precio:parseFloat(h.precio||h.Precio)||0
+      })).filter(h=>h.productoKey&&h.fecha);
+      saveHistorialPreciosLocal();
     }
     setSS('ok');
   }catch(e){setSS('err')}
@@ -1853,6 +2044,28 @@ async function syncSeguimientoToSheets(){
     setSS('ok');
   }catch(e){setSS('err')}
 }
+// Sync de productos / posiciones / historial precios
+async function syncProductosToSheets(){
+  setSS('loading');
+  try{
+    await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({_action:'saveProductos',productos:productos})});
+    setSS('ok');
+  }catch(e){setSS('err')}
+}
+async function syncPosicionesToSheets(){
+  setSS('loading');
+  try{
+    await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({_action:'savePosiciones',posiciones:posiciones})});
+    setSS('ok');
+  }catch(e){setSS('err')}
+}
+async function syncHistorialPreciosToSheets(){
+  setSS('loading');
+  try{
+    await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({_action:'saveHistorialPrecios',historialPrecios:historialPrecios})});
+    setSS('ok');
+  }catch(e){setSS('err')}
+}
 // Helper: último patrimonio registrado (más reciente)
 function lastSegPat(){
   if(!seguimiento.length)return null;
@@ -2299,26 +2512,6 @@ function updateRRSP(){
     return`<tr><td style="color:${yr===anioActual?'#00ff88':'#555'}">${yr}</td><td style="text-align:right;color:${apYr>0?'#c084fc':'#333'}">${apYr>0?fmtI(apYr):'—'}</td><td style="text-align:right">${fmtI(ig)}</td><td style="text-align:right">${fmtI(impCon)}</td><td style="text-align:right;color:${ahorro>0?'#00ff88':'#555'}">${ahorro>0?fmtI(ahorro):'—'}</td></tr>`;
   }).join('');
 }
-function renderPortafolio(){
-  const cap=fireCapital();
-  const totalInv=fireTxs.filter(t=>t.tipo==='Compra').reduce((s,t)=>s+t.monto,0)||982.79;
-  const rend=cap-totalInv;
-  $('po-pat').textContent=fmt(cap);$('po-inv').textContent=fmt(totalInv);
-  $('po-rend').textContent=(rend>=0?'+':'')+fmt(rend);
-  const etfT={};fireTxs.forEach(t=>{if(t.tipo==='Compra')etfT[t.etf]=(etfT[t.etf]||0)+t.monto});
-  if(!Object.keys(etfT).length)etfT['XEQT']=982.79;
-  const best=Object.entries(etfT).sort((a,b)=>b[1]-a[1])[0];
-  $('po-best').textContent=best?best[0]:'XEQT';
-  const etfTotal=Object.values(etfT).reduce((a,b)=>a+b,0);
-  const ETF_COLORS={'XEQT':'#00ff88','VFV':'#4d9fff','ZAG':'#c084fc','VEQT':'#ffaa00','XIU':'#ff6b6b','Efectivo':'#888','Otro':'#555'};
-  $('po-etf-dist').innerHTML=Object.entries(etfT).map(([e,v])=>{const p=(v/etfTotal*100).toFixed(1),c=ETF_COLORS[e]||'#888';return`<div class="etfr"><span class="etfn" style="color:${c}">${e}</span><div style="flex:1"><div class="bg" style="height:4px"><div class="bf" style="width:${p}%;background:${c}"></div></div></div><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:${c};min-width:36px;text-align:right">${p}%</span><span class="etfv">${fmt(v)}</span></div>`}).join('');
-  const metas={'XEQT':0.8,'VFV':0.2};
-  $('po-rebalanceo').innerHTML=Object.entries(metas).map(([e,mt])=>{const actual=(etfT[e]||0)/etfTotal,diff=(actual-mt)*100;const c=Math.abs(diff)<2?'#00ff88':Math.abs(diff)<5?'#ffaa00':'#ff4d4d';return`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="color:${ETF_COLORS[e]||'#888'}">${e}</span><span style="font-size:10px;color:#444">Real: ${(actual*100).toFixed(1)}% | Meta: ${(mt*100).toFixed(0)}%</span><span style="color:${c}">${diff>=0?'+':''}${diff.toFixed(1)}%</span></div>`}).join('');
-  $('po-tx-body').innerHTML=[...fireTxs].sort((a,b)=>new Date(b.date)-new Date(a.date)).map((t,i)=>{const r=t.precioAct&&t.precio?((t.precioAct-t.precio)/t.precio*100).toFixed(2)+'%':'—';const rc=t.precioAct&&t.precio&&t.precioAct>=t.precio?'#00ff88':'#ff4d4d';return`<tr><td style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#444">${t.date}</td><td style="color:#4d9fff">${t.cuenta}</td><td style="color:#00ff88">${t.etf}</td><td style="color:${t.tipo==='Compra'?'#00ff88':'#ff4d4d'}">${t.tipo}</td><td style="text-align:right;color:#fff">${fmt(t.monto)}</td><td style="text-align:right;color:${rc}">${r}</td><td><button class="xbtn" onclick="delInv(${i})">×</button></td></tr>`}).join('')||'<tr><td colspan="7" style="color:#1a1a2e;padding:12px 0;font-size:9px">SIN INVERSIONES</td></tr>';
-  if(charts.port)charts.port.destroy();
-  const keys=Object.keys(etfT);
-  charts.port=new Chart($('portChart'),{type:'doughnut',data:{labels:keys,datasets:[{data:keys.map(k=>parseFloat(etfT[k].toFixed(2))),backgroundColor:keys.map(k=>ETF_COLORS[k]||'#888'),borderColor:'#0a0a0f',borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'right',labels:{color:'#666',font:{size:10},boxWidth:10,padding:8}}},cutout:'60%'}});
-}
 function renderProyeccion(){
   const cap=fireCapital();const meta=FIRE.meta;
   const aporte=parseFloat($('sim-ap')?.value||2000);
@@ -2392,6 +2585,298 @@ function setScenario(k,el){
 }
 
 // ── EDITAR META FIRE ──
+// ══════════════════════════════════════════
+// GESTIÓN DE PRODUCTOS
+// ══════════════════════════════════════════
+function openProductosModal(){
+  // Cargar dropdown de clases en el form
+  const sel=$('prod-clase');
+  sel.innerHTML=CLASES_ACTIVO.map(c=>`<option value="${c.key}">${c.emoji} ${c.label}</option>`).join('');
+  $('prod-ticker').value='';$('prod-nombre').value='';
+  renderProductosList();
+  om('mo-productos');
+}
+function renderProductosList(){
+  const cont=$('productos-list');
+  if(!productos.length){
+    cont.innerHTML='<div style="color:#444;padding:14px;text-align:center;font-size:11px">SIN PRODUCTOS</div>';
+    return;
+  }
+  // Agrupar por clase
+  const porClase={};
+  productos.forEach(p=>{
+    if(!porClase[p.clase])porClase[p.clase]=[];
+    porClase[p.clase].push(p);
+  });
+  cont.innerHTML=CLASES_ACTIVO.map(cl=>{
+    const lista=porClase[cl.key]||[];
+    if(!lista.length)return '';
+    return `<div style="margin-bottom:12px">
+      <div style="font-size:10px;color:${cl.color};font-weight:600;margin-bottom:6px;letter-spacing:0.05em">${cl.emoji} ${cl.label.toUpperCase()} (${lista.length})</div>
+      ${lista.map(p=>`
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:#0a0a0f;border-left:2px solid ${cl.color};margin-bottom:4px;border-radius:3px">
+          <span style="font-family:'JetBrains Mono',monospace;font-weight:600;color:${cl.color};min-width:60px">${p.ticker}</span>
+          <span style="flex:1;font-size:11px;color:#aaa">${p.nombre}</span>
+          <button class="xbtn" onclick="delProducto('${p.key}')" title="Eliminar">×</button>
+        </div>
+      `).join('')}
+    </div>`;
+  }).join('');
+}
+function addProducto(){
+  const ticker=$('prod-ticker').value.trim().toUpperCase();
+  const nombre=$('prod-nombre').value.trim();
+  const clase=$('prod-clase').value;
+  if(!ticker||!nombre){toast('Ticker y nombre obligatorios','warn');return}
+  const key=ticker.toLowerCase().replace(/[^a-z0-9]/g,'_');
+  if(productos.find(p=>p.key===key)){toast(`${ticker} ya existe`,'warn');return}
+  productos.push({key,ticker,nombre,clase});
+  saveProductosLocal();
+  syncProductosToSheets();
+  $('prod-ticker').value='';$('prod-nombre').value='';
+  renderProductosList();
+  toast(`${ticker} agregado ✓`,'ok');
+}
+function delProducto(key){
+  const p=productos.find(x=>x.key===key);if(!p)return;
+  // Verificar si hay posiciones asociadas
+  const usado=posiciones.find(pos=>pos.productoKey===key);
+  if(usado){
+    toast(`No se puede eliminar: ${p.ticker} tiene posiciones activas`,'warn');
+    return;
+  }
+  if(!confirm(`¿Eliminar ${p.ticker} - ${p.nombre}?`))return;
+  productos=productos.filter(x=>x.key!==key);
+  saveProductosLocal();
+  syncProductosToSheets();
+  renderProductosList();
+  toast(`${p.ticker} eliminado`,'warn');
+}
+
+// ══════════════════════════════════════════
+// GESTIÓN DE POSICIONES
+// ══════════════════════════════════════════
+function openPosModal(posKey){
+  // Llenar dropdown de productos
+  const selProd=$('pos-producto');
+  selProd.innerHTML=productos.map(p=>{
+    const cl=getClase(p.clase);
+    return `<option value="${p.key}">${cl.emoji} ${p.ticker} — ${p.nombre}</option>`;
+  }).join('');
+  if(posKey){
+    const pos=posiciones.find(p=>p.key===posKey);
+    if(!pos)return;
+    editingPosicionKey=posKey;
+    $('pos-modal-title').textContent='✎ Editar posición';
+    selProd.value=pos.productoKey;
+    $('pos-cuenta').value=pos.cuenta;
+    $('pos-unidades').value=pos.unidades;
+    $('pos-costo').value=pos.costoTotal;
+    $('pos-precio').value=pos.precioActual;
+    $('pos-fecha').value=pos.fechaUltimoPrecio||today();
+  }else{
+    editingPosicionKey=null;
+    $('pos-modal-title').textContent='📊 Registrar posición';
+    $('pos-cuenta').value='TFSA/CELI';
+    $('pos-unidades').value='';$('pos-costo').value='';$('pos-precio').value='';
+    $('pos-fecha').value=today();
+  }
+  om('mo-pos');
+}
+async function savePosicion(){
+  const productoKey=$('pos-producto').value;
+  const cuenta=$('pos-cuenta').value;
+  const unidades=parseFloat($('pos-unidades').value);
+  const costo=parseFloat($('pos-costo').value);
+  const precio=parseFloat($('pos-precio').value)||0;
+  const fecha=$('pos-fecha').value||today();
+  if(!productoKey||!cuenta||isNaN(unidades)||unidades<=0||isNaN(costo)||costo<0){
+    toast('Completa producto, cuenta, unidades y costo','warn');return;
+  }
+  if(editingPosicionKey){
+    // Editar existente
+    const pos=posiciones.find(p=>p.key===editingPosicionKey);
+    if(pos){
+      const precioCambio=pos.precioActual!==precio&&precio>0;
+      pos.productoKey=productoKey;
+      pos.cuenta=cuenta;
+      pos.unidades=unidades;
+      pos.costoTotal=costo;
+      pos.precioActual=precio;
+      pos.fechaUltimoPrecio=fecha;
+      // Si el precio cambió, agregar al historial
+      if(precioCambio){
+        historialPrecios.push({productoKey,fecha,precio});
+        saveHistorialPreciosLocal();
+        syncHistorialPreciosToSheets();
+      }
+    }
+  }else{
+    // Nueva posición
+    // Verificar que no exista ya producto+cuenta
+    const dup=posiciones.find(p=>p.productoKey===productoKey&&p.cuenta===cuenta);
+    if(dup){
+      toast(`Ya tienes ${getProducto(productoKey)?.ticker} en ${cuenta} — edítala`,'warn');
+      return;
+    }
+    const key='pos_'+Date.now();
+    posiciones.push({key,productoKey,cuenta,unidades,costoTotal:costo,precioActual:precio,fechaUltimoPrecio:fecha});
+    if(precio>0){
+      historialPrecios.push({productoKey,fecha,precio});
+      saveHistorialPreciosLocal();
+      syncHistorialPreciosToSheets();
+    }
+  }
+  savePosicionesLocal();
+  await syncPosicionesToSheets();
+  cm('mo-pos');
+  renderPortafolio();
+  renderOverview();
+  toast('Posición guardada ✓','ok');
+}
+async function delPosicion(key){
+  const pos=posiciones.find(p=>p.key===key);
+  if(!pos)return;
+  const prod=getProducto(pos.productoKey);
+  if(!confirm(`¿Eliminar posición de ${prod?.ticker||'?'} en ${pos.cuenta}?`))return;
+  posiciones=posiciones.filter(p=>p.key!==key);
+  savePosicionesLocal();
+  await syncPosicionesToSheets();
+  renderPortafolio();
+  renderOverview();
+  toast('Posición eliminada','warn');
+}
+
+// ══════════════════════════════════════════
+// ACTUALIZAR PRECIO (con historial)
+// ══════════════════════════════════════════
+let updatingPrecioPosKey=null;
+function openPrecioModal(posKey){
+  const pos=posiciones.find(p=>p.key===posKey);
+  if(!pos)return;
+  const prod=getProducto(pos.productoKey);
+  if(!prod)return;
+  updatingPrecioPosKey=posKey;
+  $('precio-info').innerHTML=`Producto: <strong style="color:#00ff88">${prod.ticker}</strong> · ${pos.cuenta} · ${pos.unidades} unidades · Precio actual: ${fmt(pos.precioActual||0)}`;
+  $('precio-nuevo').value='';
+  $('precio-fecha').value=today();
+  // Cargar historial del producto
+  const hist=historialPrecios.filter(h=>h.productoKey===pos.productoKey).sort((a,b)=>a.fecha>b.fecha?-1:1);
+  $('precio-historial').innerHTML=hist.length?hist.slice(0,20).map(h=>`
+    <div style="display:flex;justify-content:space-between;padding:4px 6px;font-size:10px;font-family:'JetBrains Mono',monospace;border-bottom:1px solid #1a1a2e">
+      <span style="color:#666">${h.fecha}</span>
+      <span style="color:#00ff88">${fmt(h.precio)}</span>
+    </div>`).join(''):'<div style="color:#444;font-size:10px;padding:6px;text-align:center">Sin historial todavía</div>';
+  om('mo-precio');
+}
+async function savePrecio(){
+  if(!updatingPrecioPosKey)return;
+  const pos=posiciones.find(p=>p.key===updatingPrecioPosKey);
+  if(!pos)return;
+  const precio=parseFloat($('precio-nuevo').value);
+  const fecha=$('precio-fecha').value||today();
+  if(isNaN(precio)||precio<=0){toast('Precio inválido','warn');return}
+  pos.precioActual=precio;
+  pos.fechaUltimoPrecio=fecha;
+  // Agregar al historial
+  historialPrecios.push({productoKey:pos.productoKey,fecha,precio});
+  savePosicionesLocal();
+  saveHistorialPreciosLocal();
+  await syncPosicionesToSheets();
+  await syncHistorialPreciosToSheets();
+  cm('mo-precio');
+  renderPortafolio();
+  renderOverview();
+  const prod=getProducto(pos.productoKey);
+  toast(`${prod?.ticker} → ${fmt(precio)} ✓`,'ok');
+}
+
+// ══════════════════════════════════════════
+// RENDER PORTAFOLIO
+// ══════════════════════════════════════════
+function renderPortafolio(){
+  // KPIs
+  const total=portafolioTotal();
+  const costo=portafolioCostoTotal();
+  const rend=portafolioRendTotal();
+  const rendPct=portafolioRendPct();
+  const numPos=posiciones.length;
+
+  if($('p-total'))$('p-total').textContent=fmt(total);
+  if($('p-costo'))$('p-costo').textContent=fmt(costo);
+  if($('p-rend')){
+    $('p-rend').textContent=(rend>=0?'+':'')+fmt(rend);
+    $('p-rend').style.color=rend>=0?'#00ff88':'#ff4d4d';
+  }
+  if($('p-rend-pct')){
+    $('p-rend-pct').textContent=(rend>=0?'+':'')+rendPct.toFixed(2)+'%';
+    $('p-rend-pct').style.color=rend>=0?'#00ff88':'#ff4d4d';
+  }
+  if($('p-num'))$('p-num').textContent=numPos;
+
+  // Tabla
+  const tbody=$('pos-body');
+  if(!tbody)return;
+  if(!posiciones.length){
+    tbody.innerHTML='<tr><td colspan="9" style="color:#1a1a2e;padding:18px 0;font-size:10px;text-align:center">SIN POSICIONES — REGISTRA TU PRIMERA INVERSIÓN</td></tr>';
+  }else{
+    // Ordenar: por valor desc
+    const sorted=[...posiciones].sort((a,b)=>posValorActual(b)-posValorActual(a));
+    tbody.innerHTML=sorted.map(pos=>{
+      const prod=getProducto(pos.productoKey);
+      if(!prod)return '';
+      const cl=getClase(prod.clase);
+      const valor=posValorActual(pos);
+      const rendP=posRendimiento(pos);
+      const rendPctP=posRendimientoPct(pos);
+      const promedio=posCostoPromedio(pos);
+      const fechaPrecio=pos.fechaUltimoPrecio?`<span style="font-size:9px;color:#666">${pos.fechaUltimoPrecio}</span>`:'';
+      return `<tr>
+        <td><span style="font-family:'JetBrains Mono',monospace;font-weight:600;color:${cl.color}">${prod.ticker}</span><br><span style="font-size:9px;color:#666">${prod.nombre.substring(0,30)}${prod.nombre.length>30?'…':''}</span></td>
+        <td><span style="font-size:10px;color:#aaa">${pos.cuenta}</span></td>
+        <td><span style="font-size:10px;color:${cl.color}">${cl.emoji} ${cl.label}</span></td>
+        <td style="text-align:right;font-family:'JetBrains Mono',monospace;color:#fff">${parseFloat(pos.unidades).toFixed(4).replace(/\.?0+$/,'')}</td>
+        <td style="text-align:right;font-family:'JetBrains Mono',monospace;color:#888;font-size:10px">${fmt(promedio)}</td>
+        <td style="text-align:right;font-family:'JetBrains Mono',monospace;color:#fff">${fmt(pos.precioActual||0)}<br>${fechaPrecio}</td>
+        <td style="text-align:right;font-family:'JetBrains Mono',monospace;color:#fff;font-weight:600">${fmt(valor)}</td>
+        <td style="text-align:right;font-family:'JetBrains Mono',monospace;color:${rendP>=0?'#00ff88':'#ff4d4d'}">${(rendP>=0?'+':'')+fmt(rendP)}<br><span style="font-size:9px">${(rendP>=0?'+':'')+rendPctP.toFixed(2)}%</span></td>
+        <td>
+          <button class="btn-tiny" onclick="openPrecioModal('${pos.key}')" title="Actualizar precio" style="border-color:#4d9fff;color:#4d9fff;padding:3px 6px">💲</button>
+          <button class="btn-tiny" onclick="openPosModal('${pos.key}')" title="Editar" style="border-color:#c084fc;color:#c084fc;padding:3px 6px">✎</button>
+          <button class="xbtn" onclick="delPosicion('${pos.key}')">×</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Distribución por clase (chart)
+  renderDistribucionClase();
+}
+
+// Chart de distribución por clase
+function renderDistribucionClase(){
+  const cont=$('p-dist-clase');
+  if(!cont)return;
+  const dist=distribucionPorClase();
+  const total=Object.values(dist).reduce((s,v)=>s+v,0);
+  if(total<=0){
+    cont.innerHTML='<div style="color:#444;padding:14px;text-align:center;font-size:10px">SIN DATOS — AGREGA POSICIONES PARA VER DISTRIBUCIÓN</div>';
+    return;
+  }
+  cont.innerHTML=CLASES_ACTIVO.map(cl=>{
+    const v=dist[cl.key]||0;
+    if(v<=0)return '';
+    const pct=(v/total*100);
+    return `<div style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px">
+        <span style="color:${cl.color};font-weight:600">${cl.emoji} ${cl.label}</span>
+        <span style="color:#aaa;font-family:'JetBrains Mono',monospace">${fmt(v)} · ${pct.toFixed(1)}%</span>
+      </div>
+      <div class="bg" style="height:6px"><div class="bf" style="width:${pct}%;background:${cl.color}"></div></div>
+    </div>`;
+  }).join('');
+}
+
 function editFireMeta(){
   $('fm-gasto').value=FIRE.gasto;
   $('fm-tasa').value=(FIRE.tasa*100).toFixed(1);
@@ -2519,6 +3004,9 @@ function updateClock(){$('clk').textContent=new Date().toLocaleString('es-CA',{w
 // INIT
 async function init(){
   loadCatsAndVasijas();
+  loadProductosLocal();
+  loadPosicionesLocal();
+  loadHistorialPreciosLocal();
   $('f-date').value=today();$('iv-d').value=today();
   curMonth=curMK();updateClock();setInterval(updateClock,30000);
   buildSel();
