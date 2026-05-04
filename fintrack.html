@@ -486,15 +486,16 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
 
 <!-- Modal: Seguimiento -->
 <div class="mo" id="mo-seg"><div class="md" style="max-width:520px">
-  <div class="mt2">Agregar seguimiento mensual</div>
+  <div class="mt2">📅 Agregar registro mensual</div>
+  <p style="font-size:11px;color:#666;margin-bottom:12px">Anota el valor real de tu portafolio según tu bróker. Los aportes y rendimiento se calculan automáticamente con los datos que ya registraste.</p>
   <div class="fg">
-    <div><label class="fl">Mes/Año</label><input class="fi" id="sg-mes" placeholder="04-2026"/></div>
-    <div><label class="fl">Patrimonio total ($)</label><input class="fi" id="sg-pat" type="number" min="0" step="0.01"/></div>
-    <div><label class="fl">Aporte del mes ($)</label><input class="fi" id="sg-ap" type="number" min="0" step="0.01"/></div>
-    <div><label class="fl">Rendimiento $</label><input class="fi" id="sg-rend" type="number" step="0.01"/></div>
-    <div><label class="fl">TFSA Valor ($)</label><input class="fi" id="sg-tfsa" type="number" min="0" step="0.01"/></div>
-    <div><label class="fl">RRSP Valor ($)</label><input class="fi" id="sg-rrsp" type="number" min="0" step="0.01"/></div>
-    <div class="fgf"><label class="fl">Notas</label><input class="fi" id="sg-notas" placeholder=""/></div>
+    <div><label class="fl">Mes</label><input class="fi" id="sg-mes" type="month" onchange="autocalcSegAporte()"/></div>
+    <div><label class="fl">Patrimonio total ($) — del bróker</label><input class="fi" id="sg-pat" type="number" min="0" step="0.01" placeholder="ej. 1520.50" oninput="calcSegRend()"/></div>
+    <div><label class="fl">Aporte del mes ($) <span style="color:#33aa66;font-size:9px">(auto)</span></label><input class="fi" id="sg-ap" type="number" min="0" step="0.01" oninput="calcSegRend()"/></div>
+    <div><label class="fl">Rendimiento $ <span style="color:#c084fc;font-size:9px">(auto)</span></label><input class="fi" id="sg-rend" type="number" step="0.01" readonly style="background:#0a0a0f"/></div>
+    <div><label class="fl">CELI Valor ($) — opcional</label><input class="fi" id="sg-tfsa" type="number" min="0" step="0.01"/></div>
+    <div><label class="fl">RRSP Valor ($) — opcional</label><input class="fi" id="sg-rrsp" type="number" min="0" step="0.01"/></div>
+    <div class="fgf"><label class="fl">Notas</label><input class="fi" id="sg-notas" placeholder="ej. Mercado bajó 3%, compré más XEQT"/></div>
   </div>
   <div class="ma"><button class="btn-cancel" onclick="cm('mo-seg')">Cancelar</button><button class="btn-ok" onclick="saveSeg()">Guardar</button></div>
 </div></div>
@@ -667,13 +668,17 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
   </div>
 
   <div class="fire-subpage active" id="fp-overview">
-    <div class="kpi-row k6">
-      <div class="kpi-card" style="--accent:#00ff88"><div class="kl">Patrimonio total</div><div class="kv" id="f-pat">—</div><div class="ks">CELI + RRSP + otros</div></div>
+    <div class="kpi-row k4">
+      <div class="kpi-card" style="--accent:#00ff88"><div class="kl">Patrimonio total</div><div class="kv" id="f-pat">—</div><div class="ks" id="f-pat-s">CELI + RRSP + otros</div></div>
       <div class="kpi-card" style="--accent:#4d9fff;cursor:pointer" onclick="editFireMeta()" title="Click para editar"><div class="kl">Meta FIRE ✎</div><div class="kv" id="f-meta">$2,100,000</div><div class="ks" id="f-meta-s">$7,000/mes × 4%</div></div>
       <div class="kpi-card" style="--accent:#c084fc"><div class="kl">Años para FIRE</div><div class="kv" id="f-yrs">—</div><div class="ks" id="f-yrs-s">—</div></div>
       <div class="kpi-card" style="--accent:#ffaa00"><div class="kl">Aporte mensual</div><div class="kv" id="f-ap">—</div><div class="ks" id="f-ap-s">25% del salario</div></div>
-      <div class="kpi-card" style="--accent:#00ff88"><div class="kl">CELI disponible</div><div class="kv" id="f-celi-sp">—</div><div class="ks">Espacio restante</div></div>
-      <div class="kpi-card" style="--accent:#ff6b6b"><div class="kl">Retorno YTD</div><div class="kv" id="f-ytd">—</div><div class="ks">Rendimiento este año</div></div>
+    </div>
+    <div class="kpi-row k4">
+      <div class="kpi-card" style="--accent:#33aa66"><div class="kl">Aportado total</div><div class="kv" id="f-aportado">—</div><div class="ks" id="f-aportado-s">Capital aportado</div></div>
+      <div class="kpi-card" style="--accent:#ffee55"><div class="kl">Rendimiento real</div><div class="kv" id="f-rend">—</div><div class="ks" id="f-rend-s">Patrimonio − Aportado</div></div>
+      <div class="kpi-card" style="--accent:#55ccff"><div class="kl">CELI disponible</div><div class="kv" id="f-celi-sp">—</div><div class="ks">Espacio restante</div></div>
+      <div class="kpi-card" style="--accent:#ff6b6b"><div class="kl">Aportado YTD</div><div class="kv" id="f-ytd">—</div><div class="ks">Aportes este año</div></div>
     </div>
     <div class="fire-progress">
       <div class="fp-big" id="fp-pct">0.05%</div>
@@ -913,7 +918,7 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
       <div class="panel">
         <div class="pt">
           <span>Historial mensual</span>
-          <button class="btn-b" onclick="om('mo-seg')">+ Agregar mes</button>
+          <button class="btn-b" onclick="openSegModal()">+ Agregar mes</button>
         </div>
         <div class="txs" style="max-height:340px">
           <table class="tbl">
@@ -1307,6 +1312,20 @@ async function loadSheets(){
       salaryHistory.sort((a,b)=>a.mes>b.mes?1:-1);
       localStorage.setItem('ft_salary_history',JSON.stringify(salaryHistory));
       SAL=getCurrentSalary();
+    }
+    // Seguimiento mensual de patrimonio
+    if(j.seguimiento && Array.isArray(j.seguimiento)){
+      seguimiento=j.seguimiento.map(s=>({
+        mes:s.Mes||s.mes||'',
+        pat:parseFloat(s.Patrimonio||s.pat)||0,
+        ap:parseFloat(s.Aporte||s.ap)||0,
+        rend:parseFloat(s.Rendimiento||s.rend)||0,
+        tfsa:parseFloat(s.TFSA||s.tfsa)||0,
+        rrsp:parseFloat(s.RRSP||s.rrsp)||0,
+        notas:s.Notas||s.notas||''
+      })).filter(s=>s.mes);
+      seguimiento.sort((a,b)=>a.mes>b.mes?1:-1);
+      localStorage.setItem('ft_seg',JSON.stringify(seguimiento));
     }
     setSS('ok');
   }catch(e){setSS('err')}
@@ -1755,15 +1774,95 @@ function saveInv(){
   cm('mo-inv');renderFireAll();toast('Inversión registrada ✓','ok');
   ['iv-m','iv-p','iv-pa','iv-n'].forEach(i=>$(i).value='');
 }
-function saveSeg(){
-  const mes=$('sg-mes').value,pat=parseFloat($('sg-pat').value),ap=parseFloat($('sg-ap').value)||0;
-  const rend=parseFloat($('sg-rend').value)||0,tfsa=parseFloat($('sg-tfsa').value)||0;
-  const rrsp=parseFloat($('sg-rrsp').value)||0,notas=$('sg-notas').value;
-  if(!mes||isNaN(pat)){toast('Completa mes y patrimonio','warn');return}
-  seguimiento.push({mes,pat,ap,rend,tfsa,rrsp,notas,id:Date.now()});
+// ── SEGUIMIENTO ──
+// Auto-calcular aporte del mes basado en aportes de Inversión registrados
+function autocalcSegAporte(){
+  const mes=$('sg-mes').value;// formato YYYY-MM
+  if(!mes)return;
+  const apMes=aportes
+    .filter(a=>a.tipo==='Inversión'&&a.date&&a.date.startsWith(mes))
+    .reduce((s,a)=>s+(parseFloat(a.monto)||0),0);
+  $('sg-ap').value=apMes.toFixed(2);
+  calcSegRend();
+}
+// Auto-calcular rendimiento = patrimonio actual - patrimonio_anterior - aporte_mes
+function calcSegRend(){
+  const mes=$('sg-mes').value;
+  const pat=parseFloat($('sg-pat').value)||0;
+  const ap=parseFloat($('sg-ap').value)||0;
+  if(!mes||!pat){$('sg-rend').value='';return}
+  // Buscar el patrimonio del mes anterior en el historial
+  const sorted=[...seguimiento].sort((a,b)=>a.mes>b.mes?1:-1);
+  const anteriores=sorted.filter(s=>s.mes<mes);
+  const patAnterior=anteriores.length?parseFloat(anteriores[anteriores.length-1].pat)||0:0;
+  // Rendimiento = lo que tienes ahora - lo que tenías antes - lo que aportaste este mes
+  const rend=pat-patAnterior-ap;
+  $('sg-rend').value=rend.toFixed(2);
+}
+function openSegModal(){
+  const mesActual=new Date().toISOString().substring(0,7);
+  $('sg-mes').value=mesActual;
+  $('sg-pat').value='';
+  $('sg-ap').value='';
+  $('sg-rend').value='';
+  $('sg-tfsa').value='';
+  $('sg-rrsp').value='';
+  $('sg-notas').value='';
+  autocalcSegAporte();
+  om('mo-seg');
+  setTimeout(()=>$('sg-pat').focus(),100);
+}
+async function saveSeg(){
+  const mes=$('sg-mes').value;
+  const pat=parseFloat($('sg-pat').value);
+  const ap=parseFloat($('sg-ap').value)||0;
+  const rend=parseFloat($('sg-rend').value)||0;
+  const tfsa=parseFloat($('sg-tfsa').value)||0;
+  const rrsp=parseFloat($('sg-rrsp').value)||0;
+  const notas=$('sg-notas').value;
+  if(!mes||isNaN(pat)||pat<0){toast('Completa mes y patrimonio','warn');return}
+  // Si ya existe registro para ese mes, reemplazar
+  const idx=seguimiento.findIndex(s=>s.mes===mes);
+  const reg={mes,pat,ap,rend,tfsa,rrsp,notas,id:Date.now()};
+  if(idx>=0){
+    if(!confirm(`Ya hay registro para ${mes}. ¿Reemplazar?`))return;
+    seguimiento[idx]=reg;
+  }else{
+    seguimiento.push(reg);
+  }
+  seguimiento.sort((a,b)=>a.mes>b.mes?1:-1);
   localStorage.setItem('ft_seg',JSON.stringify(seguimiento));
-  cm('mo-seg');renderSeguimiento();toast('Mes registrado ✓','ok');
-  ['sg-mes','sg-pat','sg-ap','sg-rend','sg-tfsa','sg-rrsp','sg-notas'].forEach(i=>$(i).value='');
+  await syncSeguimientoToSheets();
+  cm('mo-seg');renderSeguimiento();renderOverview();
+  toast(`${mes} registrado ✓ — Patrimonio ${fmt(pat)}`,'ok');
+}
+async function delSeg(idx){
+  if(idx<0||!seguimiento[idx])return;
+  const s=seguimiento[idx];
+  if(!confirm(`¿Eliminar registro de ${s.mes}? (Patrimonio: ${fmt(s.pat)})`))return;
+  seguimiento.splice(idx,1);
+  localStorage.setItem('ft_seg',JSON.stringify(seguimiento));
+  await syncSeguimientoToSheets();
+  renderSeguimiento();renderOverview();
+  toast('Registro eliminado','warn');
+}
+async function syncSeguimientoToSheets(){
+  setSS('loading');
+  try{
+    await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({_action:'saveSeguimiento',seguimiento:seguimiento})});
+    setSS('ok');
+  }catch(e){setSS('err')}
+}
+// Helper: último patrimonio registrado (más reciente)
+function lastSegPat(){
+  if(!seguimiento.length)return null;
+  const sorted=[...seguimiento].sort((a,b)=>a.mes>b.mes?-1:1);
+  return parseFloat(sorted[0].pat)||null;
+}
+function lastSegMes(){
+  if(!seguimiento.length)return null;
+  const sorted=[...seguimiento].sort((a,b)=>a.mes>b.mes?-1:1);
+  return sorted[0].mes;
 }
 
 // ══════════════════════════════════════════
@@ -2060,32 +2159,56 @@ function renderFireAll(){
   else renderOverview();
 }
 function renderOverview(){
-  // ── Datos reales ──
-  const cap=fireCapital();              // Patrimonio = aportes históricos Inversión
-  const celiVal=celiCapital();          // CELI = Inversión + cuenta TFSA/CELI
-  const rrspVal=rrspCapital();          // RRSP = Inversión + cuenta RRSP/REER
-  const ytdAportes=fireYTDAportes();    // Aportado este año
+  // ── Datos: aportes vs valor real (Seguimiento) ──
+  const aportadoTotal=fireCapital();              // Suma de aportes Inversión históricos
+  const lastPat=lastSegPat();                     // Último valor real registrado en Seguimiento
+  const lastMes=lastSegMes();
+  // Si NO hay Seguimiento → usar aportes (comportamiento amigable)
+  // Si HAY Seguimiento → usar último valor registrado
+  const cap=lastPat!==null?lastPat:aportadoTotal;
+  const rendimientoReal=lastPat!==null?(cap-aportadoTotal):0;
+  const celiVal=celiCapital();
+  const rrspVal=rrspCapital();
+  const ytdAportes=fireYTDAportes();
   const meta=FIRE.meta;
   const pct=meta>0?(cap/meta)*100:0;
   const inv=VASIJAS.find(v=>v.key==='inv')||{pct:25};
-  const aporteMensualMeta=SAL*inv.pct/100;  // Mantener fijo: 25% del salario actual
+  const aporteMensualMeta=SAL*inv.pct/100;
   const res=calcFire(cap,aporteMensualMeta,FIRE.retorno,meta,FIRE.edad);
 
-  // ── KPIs principales ──
+  // ── KPIs FILA 1 ──
   $('f-pat').textContent=fmt(cap);
+  if($('f-pat-s'))$('f-pat-s').textContent=lastPat!==null?`📅 Últ. registro ${mkLbl(lastMes)}`:'Suma de aportes';
   $('f-meta').textContent=fmtM(meta);
   $('f-meta-s').textContent=`${fmtI(FIRE.gasto)}/mes × ${(FIRE.tasa*100).toFixed(1)}%`;
   $('f-yrs').textContent=Math.max(res.edad-FIRE.edad,0);
   $('f-yrs-s').textContent=cap>=meta?'🔥 ¡FIRE alcanzado!':`Edad ${res.edad} — ${res.anio}`;
   $('f-ap').textContent=fmtI(aporteMensualMeta);
   if($('f-ap-s'))$('f-ap-s').textContent=`${inv.pct}% del salario`;
+
+  // ── KPIs FILA 2 ──
+  $('f-aportado').textContent=fmt(aportadoTotal);
+  if($('f-aportado-s'))$('f-aportado-s').textContent=aportadoTotal>0?`${aportes.filter(a=>a.tipo==='Inversión').length} aporte(s) registrado(s)`:'Sin aportes aún';
+  // Rendimiento real (con color)
+  const rendEl=$('f-rend');
+  if(rendEl){
+    rendEl.textContent=lastPat!==null?(rendimientoReal>=0?'+':'')+fmt(rendimientoReal):'—';
+    rendEl.style.color=lastPat===null?'#444':(rendimientoReal>=0?'#00ff88':'#ff4d4d');
+  }
+  if($('f-rend-s')){
+    if(lastPat===null){
+      $('f-rend-s').textContent='Registra en Seguimiento';
+    }else{
+      const rendPct=aportadoTotal>0?(rendimientoReal/aportadoTotal*100).toFixed(1):'0.0';
+      $('f-rend-s').textContent=`${rendPct}% de retorno acum.`;
+    }
+  }
   $('f-celi-sp').textContent=fmtI(Math.max(FIRE.celiLimite-celiVal,0));
-  $('f-ytd').textContent=(ytdAportes>=0?'+':'')+fmt(ytdAportes);
+  $('f-ytd').textContent=fmt(ytdAportes);
 
   // ── Barra de progreso ──
   $('fp-pct').textContent=pct.toFixed(2)+'%';
   $('fp-bar').style.width=Math.min(pct,100)+'%';
-  // Actualizar etiquetas de hitos según meta dinámica
   const milestones=[['ms10',0.10],['ms25',0.25],['ms50',0.50],['ms75',0.75],['ms100',1.00]];
   milestones.forEach(([id,p])=>{
     const el=$(id);if(!el)return;
@@ -2116,7 +2239,7 @@ function renderOverview(){
     if(el)el.textContent=cap>=meta?'¡FIRE!':'Edad '+r.edad;
   });
 
-  // ── ETF Distribution (placeholder hasta implementar Portafolio) ──
+  // ── ETF Distribution (placeholder) ──
   const etfDist=$('etf-dist');
   if(etfDist){
     etfDist.innerHTML='<div style="color:#444;font-size:10px;padding:8px 0;text-align:center">Próximamente — disponible cuando implementemos Portafolio</div>';
@@ -2223,16 +2346,25 @@ function setProjScenario(s){
 function renderSeguimiento(){
   const seg=[...seguimiento].sort((a,b)=>a.mes>b.mes?-1:1);
   const cur=seg[0];const anio=new Date().getFullYear();
-  const ytdSeg=seguimiento.filter(s=>s.mes.endsWith(String(anio)));
-  $('sg-last-pat').textContent=cur?fmt(cur.pat):'—';$('sg-last-mes').textContent=cur?cur.mes:'—';
-  $('sg-ytd-ap').textContent=fmtI(ytdSeg.reduce((s,m)=>s+m.ap,0));
-  $('sg-ytd-rend').textContent=fmt(ytdSeg.reduce((s,m)=>s+m.rend,0));
+  const ytdSeg=seguimiento.filter(s=>s.mes&&s.mes.startsWith(String(anio)));
+  $('sg-last-pat').textContent=cur?fmt(cur.pat):'—';
+  $('sg-last-mes').textContent=cur?mkLbl(cur.mes):'—';
+  $('sg-ytd-ap').textContent=fmtI(ytdSeg.reduce((s,m)=>s+(parseFloat(m.ap)||0),0));
+  $('sg-ytd-rend').textContent=fmt(ytdSeg.reduce((s,m)=>s+(parseFloat(m.rend)||0),0));
   $('sg-meses').textContent=seguimiento.length;
-  $('seg-body').innerHTML=seg.length?seg.map(s=>{const rendPct=s.ap>0?(s.rend/s.ap*100).toFixed(2)+'%':'—';return`<tr><td style="color:#888">${s.mes}</td><td style="text-align:right;color:#fff">${fmt(s.pat)}</td><td style="text-align:right;color:#4d9fff">${fmtI(s.ap)}</td><td style="text-align:right;color:${s.rend>=0?'#00ff88':'#ff4d4d'}">${fmt(s.rend)}</td><td style="text-align:right;color:${s.rend>=0?'#00ff88':'#ff4d4d'}">${rendPct}</td><td style="text-align:right;color:#4d9fff">${s.tfsa?fmtI(s.tfsa):'—'}</td><td style="text-align:right;color:#c084fc">${s.rrsp?fmtI(s.rrsp):'—'}</td><td><button class="xbtn" onclick="delSeg(${seguimiento.indexOf(s)})">×</button></td></tr>`}).join(''):'<tr><td colspan="8" style="color:#1a1a2e;padding:14px 0;font-size:9px">SIN REGISTROS</td></tr>';
+  $('seg-body').innerHTML=seg.length?seg.map(s=>{
+    const rend=parseFloat(s.rend)||0;
+    const ap=parseFloat(s.ap)||0;
+    const pat=parseFloat(s.pat)||0;
+    // Rendimiento % se calcula sobre el patrimonio anterior, no sobre el aporte
+    const rendPct=pat>0&&rend!==0?(rend/(pat-rend)*100).toFixed(2)+'%':'—';
+    const realIdx=seguimiento.findIndex(x=>x.mes===s.mes);
+    return`<tr><td style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#888">${mkLbl(s.mes)}</td><td style="text-align:right;font-family:'JetBrains Mono',monospace;color:#fff">${fmt(pat)}</td><td style="text-align:right;color:#4d9fff">${ap>0?fmtI(ap):'—'}</td><td style="text-align:right;color:${rend>=0?'#00ff88':'#ff4d4d'}">${rend!==0?fmt(rend):'—'}</td><td style="text-align:right;color:${rend>=0?'#00ff88':'#ff4d4d'};font-size:10px">${rendPct}</td><td style="text-align:right;color:#4d9fff">${s.tfsa>0?fmtI(s.tfsa):'—'}</td><td style="text-align:right;color:#c084fc">${s.rrsp>0?fmtI(s.rrsp):'—'}</td><td><button class="xbtn" onclick="delSeg(${realIdx})">×</button></td></tr>`;
+  }).join(''):'<tr><td colspan="8" style="color:#1a1a2e;padding:14px 0;font-size:9px;text-align:center">SIN REGISTROS — AGREGA TU PRIMER MES PARA EMPEZAR EL TRACKING</td></tr>';
   if(charts.seg)charts.seg.destroy();
   if(!seg.length)return;
   const sorted=[...seg].sort((a,b)=>a.mes>b.mes?1:-1);
-  charts.seg=new Chart($('segChart'),{type:'line',data:{labels:sorted.map(s=>s.mes),datasets:[{label:'Patrimonio',data:sorted.map(s=>s.pat),borderColor:'#00ff88',backgroundColor:'#00ff8808',fill:true,tension:0.4,pointRadius:4,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#444',font:{size:9}},grid:{color:'#1a1a2e'}},y:{ticks:{color:'#444',font:{size:9},callback:v=>fmtM(v)},grid:{color:'#1a1a2e'},beginAtZero:false}}}});
+  charts.seg=new Chart($('segChart'),{type:'line',data:{labels:sorted.map(s=>mkLbl(s.mes)),datasets:[{label:'Patrimonio',data:sorted.map(s=>parseFloat(s.pat)||0),borderColor:'#00ff88',backgroundColor:'#00ff8810',fill:true,tension:0.3,pointRadius:5,pointBackgroundColor:'#00ff88',pointBorderColor:'#0a0a0f',pointBorderWidth:2,borderWidth:2.5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${fmt(ctx.raw)}`}}},scales:{x:{ticks:{color:'#666',font:{size:10,family:'JetBrains Mono'}},grid:{color:'#1a1a2e'}},y:{ticks:{color:'#666',font:{size:10,family:'JetBrains Mono'},callback:v=>fmtM(v)},grid:{color:'#1a1a2e'},beginAtZero:false}}}});
 }
 function updateSim(){
   // Si el slider de meta no fue tocado todavía, usar FIRE.meta como default
