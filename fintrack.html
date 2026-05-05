@@ -942,7 +942,7 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
         <p style="font-size:10px;color:#666;margin:0 0 10px;line-height:1.4">💡 Click en un límite para editarlo. El gobierno publica el nuevo límite en diciembre cada año.</p>
         <div style="max-height:340px;overflow-y:auto">
           <table class="celi-tbl">
-            <thead><tr><th>Año</th><th style="text-align:right">Límite</th><th style="text-align:right">Acumulado</th><th style="text-align:right">Aportado</th><th style="text-align:right">Saldo</th></tr></thead>
+            <thead><tr><th>Año</th><th style="text-align:right">Límite</th><th style="text-align:right">Acumulado</th><th style="text-align:right">Aportado</th><th style="text-align:right">Saldo</th><th style="width:24px"></th></tr></thead>
             <tbody id="celi-tbl-body"></tbody>
           </table>
         </div>
@@ -1024,6 +1024,32 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
             <thead><tr><th>Año</th><th style="text-align:right">Aporte</th><th style="text-align:right">Gravable</th><th style="text-align:right">Impuesto</th><th style="text-align:right">💰 Ahorro</th></tr></thead>
             <tbody id="rrsp-sim-body"></tbody>
           </table>
+        </div>
+        <div class="divider"></div>
+        <div class="pt" style="margin-bottom:8px">
+          <span>🗓️ Histórico de espacio RRSP</span>
+          <button class="btn-sm" onclick="agregarAnoRrsp()" style="border-color:#c084fc;color:#c084fc">+ Agregar año</button>
+        </div>
+        <p style="font-size:10px;color:#666;margin:0 0 8px;line-height:1.4">💡 Edita tu ingreso de cada año desde tu llegada a Canadá. La app calcula 18% como espacio RRSP generado, y suma tus aportes para obtener tu espacio acumulado real.</p>
+        <div style="max-height:200px;overflow-y:auto">
+          <table class="celi-tbl">
+            <thead><tr><th>Año</th><th style="text-align:right">Ingreso</th><th style="text-align:right">+Espacio (18%)</th><th style="text-align:right">Aportado</th><th style="text-align:right">Saldo año</th><th style="width:24px"></th></tr></thead>
+            <tbody id="rrsp-hist-body"></tbody>
+          </table>
+        </div>
+        <div style="background:#0a0a0f;border:1px solid #c084fc30;border-radius:5px;padding:10px;margin-top:10px">
+          <div style="display:flex;justify-content:space-between;font-size:11px">
+            <span style="color:#888">Espacio acumulado total:</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-weight:700;color:#c084fc" id="rr-hist-acum">$0</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:4px">
+            <span style="color:#888">Aportado total:</span>
+            <span style="font-family:'JetBrains Mono',monospace;color:#aaa" id="rr-hist-aportado">$0</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:6px;padding-top:6px;border-top:1px solid #1a1a2e">
+            <span style="color:#00ff88;font-weight:600">Espacio disponible:</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-weight:700;color:#00ff88;font-size:14px" id="rr-hist-disp">$0</span>
+          </div>
         </div>
       </div>
       <div class="panel">
@@ -1500,6 +1526,15 @@ function loadRrspConfig(){
   else RRSP_CONFIG={...RRSP_CONFIG_DEFAULT};
 }
 function saveRrspConfig(){localStorage.setItem('ft_rrsp_config',JSON.stringify(RRSP_CONFIG))}
+
+// Histórico RRSP año por año: {2019: {ingreso: 60000}, 2020: {ingreso: 65000}...}
+let RRSP_HISTORIAL={};
+function loadRrspHistorial(){
+  const s=localStorage.getItem('ft_rrsp_historial');
+  if(s){try{RRSP_HISTORIAL=JSON.parse(s)}catch(e){RRSP_HISTORIAL={}}}
+  else RRSP_HISTORIAL={};
+}
+function saveRrspHistorial(){localStorage.setItem('ft_rrsp_historial',JSON.stringify(RRSP_HISTORIAL))}
 
 // Configuración Proyección
 const PROJ_CONFIG_DEFAULT={aporteMensual:1235,retornoBase:0.07,inflacion:0.025,modoVista:'nominal'};
@@ -3046,6 +3081,7 @@ function updateCeliTable(){
   const aportesCeli=aportes.filter(a=>a.cuenta==='TFSA/CELI'&&a.tipo==='Inversión');
   let acum=0,total=0;
   const yrs=Object.keys(CELI_LIMITES).map(y=>parseInt(y)).sort((a,b)=>a-b);
+  const maxYr=Math.max(...yrs);
   $('celi-tbl-body').innerHTML=yrs.map(y=>{
     const lim=parseFloat(CELI_LIMITES[y])||0;
     acum+=lim;
@@ -3057,7 +3093,13 @@ function updateCeliTable(){
     const hasAp=aportadoYr>0;
     const limFmt=`<input class="celi-lim-edit" data-yr="${y}" value="${lim}" type="number" min="0" step="100" onchange="onCeliLimitEdit(${y},this.value)" style="width:75px;background:#0a0a0f;border:1px solid #1a1a2e;color:${lim===0?'#ff8c42':'#fff'};font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 5px;border-radius:3px;text-align:right"/>`;
     const pendiente=lim===0?'<span style="font-size:9px;color:#ff8c42;margin-left:4px">⚠️</span>':'';
-    return`<tr class="${isCur?'yr-cur':hasAp?'yr-has':''}"><td style="font-family:'JetBrains Mono',monospace">${y}${isCur?' ←':''}</td><td style="text-align:right">${limFmt}${pendiente}</td><td style="text-align:right">${fmtI(acum)}</td><td style="text-align:right;color:${hasAp?'#00ff88':'#333'}">${hasAp?fmtI(aportadoYr):'—'}</td><td style="text-align:right;color:${saldo>=0?'#4d9fff':'#ff4d4d'}">${saldo>=0?fmtI(saldo):'-'+fmtI(Math.abs(saldo))}</td></tr>`;
+    // Solo se puede borrar el último año Y solo si no tiene aportes
+    const puedeEliminar=(y===maxYr)&&!hasAp&&y>2009;
+    const btnDel=puedeEliminar
+      ?`<button class="xbtn" onclick="eliminarAnoCeli(${y})" title="Eliminar año">×</button>`
+      :hasAp?`<span title="No se puede borrar: tiene aportes" style="color:#1a1a2e;font-size:11px">🔒</span>`
+      :y!==maxYr?`<span title="Solo se puede borrar el último año" style="color:#1a1a2e;font-size:11px">·</span>`:'';
+    return`<tr class="${isCur?'yr-cur':hasAp?'yr-has':''}"><td style="font-family:'JetBrains Mono',monospace">${y}${isCur?' ←':''}</td><td style="text-align:right">${limFmt}${pendiente}</td><td style="text-align:right">${fmtI(acum)}</td><td style="text-align:right;color:${hasAp?'#00ff88':'#333'}">${hasAp?fmtI(aportadoYr):'—'}</td><td style="text-align:right;color:${saldo>=0?'#4d9fff':'#ff4d4d'}">${saldo>=0?fmtI(saldo):'-'+fmtI(Math.abs(saldo))}</td><td style="text-align:center">${btnDel}</td></tr>`;
   }).join('');
   $('celi-limite-total').textContent=fmtI(total);
 }
@@ -3076,6 +3118,13 @@ function agregarAnoCeli(){
   saveCeliLimites();
   renderCeli();
   toast(`Año ${nuevo} agregado — edita el límite`,'ok');
+}
+function eliminarAnoCeli(yr){
+  if(!confirm(`¿Eliminar el año ${yr} de la tabla TFSA?\n\nNota: solo se pueden borrar años sin aportes.`))return;
+  delete CELI_LIMITES[yr];
+  saveCeliLimites();
+  renderCeli();
+  toast(`Año ${yr} eliminado ✓`,'warn');
 }
 function renderCeliEvolChart(){
   if(charts.celiEvol)charts.celiEvol.destroy();
@@ -3133,6 +3182,8 @@ function renderRRSP(){
   $('rrsp-tx-body').innerHTML=sortedAp.length?sortedAp.map(a=>`<tr><td style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#444">${a.date}</td><td style="color:#c084fc;font-size:10px">RRSP</td><td style="color:#888;font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.notas||'—'}</td><td style="text-align:right;font-family:'JetBrains Mono',monospace;color:#33aa66">${fmt(a.monto)}</td></tr>`).join(''):'<tr><td colspan="4" style="color:#1a1a2e;padding:12px 0;font-size:9px;text-align:center">SIN APORTES — REGISTRA UNO EN FINTRACK</td></tr>';
   // Recomendador
   renderRecomendador();
+  // Histórico RRSP
+  renderRrspHistorial();
 }
 function onRrspConfigChange(){
   RRSP_CONFIG.espacioNOA=parseFloat($('rr-noa').value)||0;
@@ -3149,12 +3200,87 @@ function onRrspConfigChange(){
   renderRecomendador();
 }
 function calcEspacioRrsp(){
-  // Espacio = NOA + (18% del ingreso del año actual)
+  // NUEVA LÓGICA: usar histórico si existe, sino fallback al método NOA simple
+  const historicoYrs=Object.keys(RRSP_HISTORIAL).map(y=>parseInt(y));
+  if(historicoYrs.length>0){
+    const aportesRrsp=aportes.filter(a=>a.cuenta==='RRSP/REER'&&a.tipo==='Inversión');
+    const aportadoTotal=aportesRrsp.reduce((s,a)=>s+parseFloat(a.monto),0);
+    let espacioGenerado=0;
+    historicoYrs.forEach(y=>{
+      const ing=parseFloat(RRSP_HISTORIAL[y]?.ingreso)||0;
+      const lim=parseFloat(RRSP_LIMITES[y])||999999;
+      espacioGenerado+=Math.min(ing*0.18,lim);
+    });
+    return Math.max(espacioGenerado-aportadoTotal,0);
+  }
+  // Fallback: NOA + 18% del ingreso actual
   const espacioBase=RRSP_CONFIG.espacioNOA||0;
   const espacioNuevo=RRSP_CONFIG.ingresoBruto*0.18;
   const aportesRrsp=aportes.filter(a=>a.cuenta==='RRSP/REER'&&a.tipo==='Inversión');
   const aportadoTotal=aportesRrsp.reduce((s,a)=>s+parseFloat(a.monto),0);
   return Math.max(espacioBase+espacioNuevo-aportadoTotal,0);
+}
+function renderRrspHistorial(){
+  const body=$('rrsp-hist-body');
+  if(!body)return;
+  const aportesRrsp=aportes.filter(a=>a.cuenta==='RRSP/REER'&&a.tipo==='Inversión');
+  const llegada=parseInt($('celi-llegada')?.value)||2019;
+  const yrAct=new Date().getFullYear();
+  // Si está vacío, inicializar con años desde llegada hasta el actual
+  if(Object.keys(RRSP_HISTORIAL).length===0){
+    for(let y=llegada;y<=yrAct;y++){
+      RRSP_HISTORIAL[y]={ingreso:0};
+    }
+    saveRrspHistorial();
+  }
+  const yrsOrden=Object.keys(RRSP_HISTORIAL).map(y=>parseInt(y)).sort((a,b)=>a-b);
+  const maxYr=Math.max(...yrsOrden);
+  let espacioAcum=0,aportadoAcum=0;
+  body.innerHTML=yrsOrden.map(y=>{
+    const ing=parseFloat(RRSP_HISTORIAL[y]?.ingreso)||0;
+    const lim=parseFloat(RRSP_LIMITES[y])||999999;
+    const espacioGen=Math.min(ing*0.18,lim);
+    espacioAcum+=espacioGen;
+    const apYr=aportesRrsp.filter(a=>new Date(a.date).getFullYear()===y).reduce((s,a)=>s+parseFloat(a.monto),0);
+    aportadoAcum+=apYr;
+    const saldoYr=espacioGen-apYr;
+    const isCur=y===yrAct;
+    const hasAp=apYr>0;
+    const ingFmt=`<input type="number" min="0" step="500" value="${ing}" onchange="onRrspIngresoEdit(${y},this.value)" style="width:90px;background:#0a0a0f;border:1px solid #1a1a2e;color:${ing===0?'#ff8c42':'#fff'};font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 5px;border-radius:3px;text-align:right"/>`;
+    const puedeEliminar=(y===maxYr)&&!hasAp&&y>2009;
+    const btnDel=puedeEliminar
+      ?`<button class="xbtn" onclick="eliminarAnoRrsp(${y})" title="Eliminar año">×</button>`
+      :hasAp?`<span title="No se puede borrar: tiene aportes" style="color:#1a1a2e;font-size:11px">🔒</span>`
+      :y!==maxYr?`<span style="color:#1a1a2e;font-size:11px">·</span>`:'';
+    return`<tr class="${isCur?'yr-cur':hasAp?'yr-has':''}"><td style="font-family:'JetBrains Mono',monospace">${y}${isCur?' ←':''}</td><td style="text-align:right">${ingFmt}</td><td style="text-align:right;color:#c084fc">${fmtI(espacioGen)}</td><td style="text-align:right;color:${hasAp?'#00ff88':'#333'}">${hasAp?fmtI(apYr):'—'}</td><td style="text-align:right;color:${saldoYr>=0?'#4d9fff':'#ff4d4d'}">${saldoYr>=0?fmtI(saldoYr):'-'+fmtI(Math.abs(saldoYr))}</td><td style="text-align:center">${btnDel}</td></tr>`;
+  }).join('');
+  $('rr-hist-acum').textContent=fmtI(espacioAcum);
+  $('rr-hist-aportado').textContent=fmtI(aportadoAcum);
+  $('rr-hist-disp').textContent=fmtI(Math.max(espacioAcum-aportadoAcum,0));
+}
+function onRrspIngresoEdit(yr,val){
+  const v=parseFloat(val)||0;
+  if(!RRSP_HISTORIAL[yr])RRSP_HISTORIAL[yr]={};
+  RRSP_HISTORIAL[yr].ingreso=v;
+  saveRrspHistorial();
+  renderRRSP();
+  toast(`Ingreso ${yr}: ${fmtI(v)} ✓`,'ok');
+}
+function agregarAnoRrsp(){
+  const yrs=Object.keys(RRSP_HISTORIAL).map(y=>parseInt(y));
+  const maxYr=yrs.length>0?Math.max(...yrs):new Date().getFullYear()-1;
+  const nuevo=maxYr+1;
+  RRSP_HISTORIAL[nuevo]={ingreso:0};
+  saveRrspHistorial();
+  renderRRSP();
+  toast(`Año ${nuevo} agregado — edita el ingreso`,'ok');
+}
+function eliminarAnoRrsp(yr){
+  if(!confirm(`¿Eliminar el año ${yr} del histórico RRSP?\n\nNota: solo se pueden borrar años sin aportes.`))return;
+  delete RRSP_HISTORIAL[yr];
+  saveRrspHistorial();
+  renderRRSP();
+  toast(`Año ${yr} eliminado ✓`,'warn');
 }
 function updateRRSPSim(){
   const tasa=RRSP_CONFIG.tasaMarginal/100;
@@ -3163,7 +3289,8 @@ function updateRRSPSim(){
   const espacioDisp=calcEspacioRrsp();
   // KPIs
   $('rr-esp').textContent=fmtI(espacioDisp);
-  $('rr-esp-s').textContent=`NOA ${RRSP_CONFIG.anoNOA} + 18% × ${fmtI(ing)}`;
+  const usaHistorico=Object.keys(RRSP_HISTORIAL).length>0;
+  $('rr-esp-s').textContent=usaHistorico?`📊 Calculado del histórico`:`NOA ${RRSP_CONFIG.anoNOA} + 18% × ${fmtI(ing)}`;
   const apEfectivo=Math.min(ap,espacioDisp);
   const tax=apEfectivo*tasa;
   $('rr-tax').textContent=fmtI(tax);
@@ -4021,6 +4148,7 @@ async function init(){
   loadCeliLimites();
   loadRrspLimites();
   loadRrspConfig();
+  loadRrspHistorial();
   loadProjConfig();
   // Mostrar saludo y frase en la pantalla de carga
   const lgreetingEl=$('lgreeting');
