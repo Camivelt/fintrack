@@ -2058,31 +2058,32 @@ function migrateCatsVigencia(){
     const sorted=expenses.map(e=>e.date).filter(d=>d).sort();
     if(sorted.length)firstMes=sorted[0].substring(0,7);
   }
-  // Prioridad 2: fecha de inicio FIRE del usuario
-  if(!firstMes&&USER&&USER.fechaInicioFire){
-    let f=USER.fechaInicioFire;
-    if(f instanceof Date)f=f.toISOString().split('T')[0];
-    if(typeof f==='string'&&f.match(/^\d{4}-\d{2}/)){
-      firstMes=f.substring(0,7);
-    }
-  }
-  // Prioridad 3: enero del año actual (no el mes actual)
+  // Prioridad 2: enero del año actual (más amplio que fechaInicioFire,
+  // permite que filtros Q1/Q2/Q3/Q4 funcionen siempre)
   if(!firstMes)firstMes=new Date().getFullYear()+'-01';
   let migrated=false;
-  // Detectar si todas las cats tienen el mismo desde = mes actual (síntoma del bug viejo)
+  // Detectar BUG VIEJO: si todas las cats base tienen el mismo desde y NO hay gastos en ese mes,
+  // probablemente fue sembrado erróneamente con el mes actual. Forzar a firstMes.
   const todayYM=new Date().toISOString().substring(0,7);
-  const allSameToday=CATS.length>0&&CATS.every(c=>c.desde===todayYM);
-  // Si todas tienen mes actual y NO hay gastos en ese mes → migrar a firstMes (fix retroactivo)
-  const hayGastosEnEseMes=expenses.some(e=>e.date&&e.date.substring(0,7)===todayYM);
-  const aplicarFix=allSameToday&&!hayGastosEnEseMes&&firstMes!==todayYM;
+  const baseCats=CATS.filter(c=>!c.custom);
+  const desdeUniformes={};
+  baseCats.forEach(c=>{if(c.desde)desdeUniformes[c.desde]=(desdeUniformes[c.desde]||0)+1});
+  // Si la mayoría de cats base tienen el mismo desde
+  let mostCommonDesde=null,maxCount=0;
+  Object.entries(desdeUniformes).forEach(([d,n])=>{if(n>maxCount){maxCount=n;mostCommonDesde=d}});
+  const mostCommonRatio=baseCats.length>0?maxCount/baseCats.length:0;
+  // Si >70% de cats base tienen el mismo desde Y NO hay gastos en ese mes Y ese desde > firstMes
+  // → probablemente fue sembrado mal (bug viejo)
+  const hayGastosEnEseMes=expenses.some(e=>e.date&&e.date.substring(0,7)===mostCommonDesde);
+  const aplicarFix=mostCommonRatio>0.7&&!hayGastosEnEseMes&&mostCommonDesde&&mostCommonDesde>firstMes;
   CATS.forEach(c=>{
     // 'desde' falta: cubre undefined, null, '', false, 0
     if(!c.desde||typeof c.desde!=='string'||!c.desde.match(/^\d{4}-\d{2}$/)){
       c.desde=firstMes;
       migrated=true;
     }
-    // Fix retroactivo: si todas las cats fueron sembradas con mes actual incorrectamente
-    else if(aplicarFix&&c.desde===todayYM){
+    // Fix retroactivo: si todas las cats base tienen el mismo desde sospechoso
+    else if(aplicarFix&&!c.custom&&c.desde===mostCommonDesde){
       c.desde=firstMes;
       migrated=true;
     }
@@ -2097,7 +2098,11 @@ function migrateCatsVigencia(){
       migrated=true;
     }
   });
-  if(migrated)saveCatsLocal();
+  if(migrated){
+    saveCatsLocal();
+    // CRÍTICO: sincronizar a Sheets para que el fix persista entre recargas
+    syncCatsToSheets();
+  }
 }
 
 // Sync con Sheets
@@ -4788,7 +4793,14 @@ async function init(){
     syncCatsToSheets();// sincronizar Sheet limpio
     setTimeout(()=>toast(`Limpieza: ${removed} duplicado${removed>1?'s':''} eliminado${removed>1?'s':''}`,'warn'),1000);
   }
+  // Detectar antes de migrar para informar al usuario
+  const desdeAntes=CATS.length?[...new Set(CATS.map(c=>c.desde))].slice(0,3).join(','):'';
   migrateCatsVigencia();// migrar categorías sin 'desde'
+  const desdeDespues=CATS.length?[...new Set(CATS.map(c=>c.desde))].slice(0,3).join(','):'';
+  if(desdeAntes!==desdeDespues){
+    console.log(`[FIX] Categorías migradas: desde "${desdeAntes}" → "${desdeDespues}"`);
+    setTimeout(()=>toast(`✓ Categorías migradas — filtros Q1-Q4 ahora funcionan`,'ok'),1500);
+  }
   // Re-actualizar saludo y frase con datos del usuario cargados de Sheets
   if($('lgreeting'))$('lgreeting').innerHTML=`${getSaludoDelMomento()}, <strong>${USER.nombre}</strong>`;
   const fraseFinal=USER.frasePersonalizada?{f:USER.frasePersonalizada,a:'Tu frase'}:getFraseDelDia();
