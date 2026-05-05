@@ -4694,7 +4694,7 @@ function exportCSV(){
   const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download=`fintrack_${curMonth}.csv`;a.click();toast('CSV exportado','ok');
 }
 function toast(msg,type){
-  const t=$('toast');t.textContent=msg;t.className=`toast ${type==='ok'?'tok':type==='warn'?'twarn':'terr'} show`;
+  const t=$('toast');t.textContent=msg;t.className=`toast ${type==='ok'?'tok':type==='warn'?'twarn':type==='info'?'tinfo':'terr'} show`;
   setTimeout(()=>t.classList.remove('show'),3200);
 }
 function openPerfilModal(){
