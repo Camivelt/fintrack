@@ -931,24 +931,32 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
       <div class="kpi-card" style="--accent:#ffaa00"><div class="kl">% Espacio usado</div><div class="kv" id="cl-pct">—</div><div class="ks">Del total acumulado</div></div>
       <div class="kpi-card" style="--accent:#c084fc"><div class="kl">Retorno acumulado</div><div class="kv" id="cl-ret">—</div><div class="ks">Rendimiento total</div></div>
     </div>
+    <!-- Alerta si me paso del límite -->
+    <div id="cl-alert-wrap" style="display:none;margin-bottom:14px"></div>
     <div class="g2">
       <div class="panel">
-        <div class="pt">Límites anuales CELI — Gobierno de Canadá</div>
-        <div style="max-height:380px;overflow-y:auto">
+        <div class="pt">
+          <span>Límites anuales TFSA — Gobierno de Canadá</span>
+          <button class="btn-sm" onclick="agregarAnoCeli()" style="border-color:#4d9fff;color:#4d9fff">+ Agregar año</button>
+        </div>
+        <p style="font-size:10px;color:#666;margin:0 0 10px;line-height:1.4">💡 Click en un límite para editarlo. El gobierno publica el nuevo límite en diciembre cada año.</p>
+        <div style="max-height:340px;overflow-y:auto">
           <table class="celi-tbl">
             <thead><tr><th>Año</th><th style="text-align:right">Límite</th><th style="text-align:right">Acumulado</th><th style="text-align:right">Aportado</th><th style="text-align:right">Saldo</th></tr></thead>
             <tbody id="celi-tbl-body"></tbody>
           </table>
         </div>
         <div class="divider"></div>
-        <div style="display:flex;align-items:center;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#444">AÑO LLEGADA A CANADÁ:</span>
-          <select class="fs" id="celi-llegada" onchange="updateCeliTable()" style="width:90px;padding:5px 8px">
-            <option value="2015">2015</option><option value="2016">2016</option><option value="2017">2017</option><option value="2018">2018</option>
-            <option value="2019" selected>2019</option><option value="2020">2020</option><option value="2021">2021</option><option value="2022">2022</option>
-            <option value="2023">2023</option><option value="2024">2024</option><option value="2025">2025</option>
+          <select class="fs" id="celi-llegada" onchange="updateCeliLlegada()" style="width:90px;padding:5px 8px">
+            <option value="2009">2009</option><option value="2010">2010</option><option value="2011">2011</option><option value="2012">2012</option>
+            <option value="2013">2013</option><option value="2014">2014</option><option value="2015">2015</option><option value="2016">2016</option>
+            <option value="2017">2017</option><option value="2018">2018</option><option value="2019" selected>2019</option><option value="2020">2020</option>
+            <option value="2021">2021</option><option value="2022">2022</option><option value="2023">2023</option><option value="2024">2024</option>
+            <option value="2025">2025</option><option value="2026">2026</option>
           </select>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#00ff88">Total: <span id="celi-limite-total">$51,500</span></span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#00ff88">Total acumulado: <span id="celi-limite-total">$51,500</span></span>
         </div>
       </div>
       <div class="panel">
@@ -961,9 +969,12 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
           <div class="bg2"><div class="bf2" id="cl-bar" style="background:#4d9fff;width:0%"></div></div>
         </div>
         <div class="divider"></div>
+        <div class="pt">📊 Evolución histórica</div>
+        <div class="cw"><canvas id="celi-evol-chart"></canvas></div>
+        <div class="divider"></div>
         <div class="pt">Aportes en CELI</div>
-        <div class="txs">
-          <table class="tbl"><thead><tr><th>Fecha</th><th>ETF</th><th>Tipo</th><th style="text-align:right">Monto</th><th style="text-align:right">Rend.</th></tr></thead>
+        <div class="txs" style="max-height:160px">
+          <table class="tbl"><thead><tr><th>Fecha</th><th>Cuenta</th><th>Notas</th><th style="text-align:right">Monto</th></tr></thead>
           <tbody id="celi-tx-body"></tbody></table>
         </div>
       </div>
@@ -972,19 +983,34 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
 
   <div class="fire-subpage" id="fp-rrsp">
     <div class="kpi-row k4">
-      <div class="kpi-card" style="--accent:#c084fc"><div class="kl">Valor RRSP</div><div class="kv" id="rr-val">$0.00</div><div class="ks">Inversiones activas</div></div>
-      <div class="kpi-card" style="--accent:#4d9fff"><div class="kl">Espacio disponible</div><div class="kv" id="rr-esp">$21,420</div><div class="ks">Límite 2026</div></div>
-      <div class="kpi-card" style="--accent:#00ff88"><div class="kl">Retorno fiscal</div><div class="kv" id="rr-tax">$0</div><div class="ks">Tasa marginal 43.75%</div></div>
+      <div class="kpi-card" style="--accent:#c084fc"><div class="kl">Valor RRSP</div><div class="kv" id="rr-val">$0.00</div><div class="ks" id="rr-val-s">Aportado</div></div>
+      <div class="kpi-card" style="--accent:#4d9fff"><div class="kl">Espacio disponible</div><div class="kv" id="rr-esp">—</div><div class="ks" id="rr-esp-s">NOA + 18% del año</div></div>
+      <div class="kpi-card" style="--accent:#00ff88"><div class="kl">Retorno fiscal</div><div class="kv" id="rr-tax">$0</div><div class="ks" id="rr-tax-s">Si aportas el plan</div></div>
       <div class="kpi-card" style="--accent:#ffaa00"><div class="kl">Ahorro acum.</div><div class="kv" id="rr-saved">$0</div><div class="ks">Total en taxes</div></div>
     </div>
     <div class="g2">
       <div class="panel">
-        <div class="pt">Supuestos fiscales Quebec</div>
+        <div class="pt">📋 Tu situación fiscal Quebec</div>
+        <p style="font-size:10px;color:#666;margin:0 0 12px;line-height:1.4">💡 Tu espacio RRSP viene de tu Notice of Assessment (NOA) de la CRA. Cada año se suma 18% de tu ingreso del año anterior.</p>
         <div class="fg">
-          <div><label class="fl">Ingreso bruto anual</label><input class="fi" id="rr-ing" type="number" value="97500" oninput="updateRRSP()"/></div>
-          <div><label class="fl">Tasa marginal (%)</label><input class="fi" id="rr-tasa" type="number" value="43.75" step="0.01" oninput="updateRRSP()"/></div>
-          <div><label class="fl">Límite RRSP 2026</label><input class="fi" id="rr-lim" type="number" value="21420" oninput="updateRRSP()"/></div>
-          <div><label class="fl">Aporte planificado</label><input class="fi" id="rr-ap-plan" type="number" value="0" oninput="updateRRSP()"/></div>
+          <div><label class="fl">Espacio acumulado NOA ($)</label><input class="fi" id="rr-noa" type="number" min="0" step="100" value="0" oninput="onRrspConfigChange()"/></div>
+          <div><label class="fl">Año del NOA</label><select class="fs" id="rr-noa-year" onchange="onRrspConfigChange()"></select></div>
+        </div>
+        <div class="divider" style="margin:12px 0"></div>
+        <div class="slider-row" style="margin-bottom:10px">
+          <span class="sl-lbl">Ingreso bruto anual</span>
+          <input type="range" id="rr-ing-slider" min="20000" max="250000" step="1000" value="97500" oninput="onRrspConfigChange()">
+          <span class="sl-val" id="rr-ing-val">$97,500</span>
+        </div>
+        <div class="slider-row" style="margin-bottom:10px">
+          <span class="sl-lbl">Tasa marginal Quebec</span>
+          <input type="range" id="rr-tasa-slider" min="20" max="55" step="0.25" value="43.75" oninput="onRrspConfigChange()">
+          <span class="sl-val" id="rr-tasa-val">43.75%</span>
+        </div>
+        <div class="slider-row" style="margin-bottom:10px">
+          <span class="sl-lbl">Aporte planificado</span>
+          <input type="range" id="rr-ap-slider" min="0" max="50000" step="100" value="0" oninput="onRrspConfigChange()">
+          <span class="sl-val" id="rr-ap-val">$0</span>
         </div>
         <div class="rrsp-sim-result">
           <div class="slbl" style="text-align:center">RETORNO EN IMPUESTOS</div>
@@ -992,8 +1018,8 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
           <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#444;text-align:center;margin-top:4px">por aportar <span id="rr-ap-show">$0</span> al RRSP</div>
         </div>
         <div class="divider"></div>
-        <div class="pt">Simulador año a año</div>
-        <div style="max-height:200px;overflow-y:auto">
+        <div class="pt" style="margin-bottom:8px">📅 Simulador año a año</div>
+        <div style="max-height:160px;overflow-y:auto">
           <table class="celi-tbl">
             <thead><tr><th>Año</th><th style="text-align:right">Aporte</th><th style="text-align:right">Gravable</th><th style="text-align:right">Impuesto</th><th style="text-align:right">💰 Ahorro</th></tr></thead>
             <tbody id="rrsp-sim-body"></tbody>
@@ -1002,16 +1028,22 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
       </div>
       <div class="panel">
         <div class="pt">
-          <span>Registro RRSP</span>
-          <button class="btn-p" onclick="om('mo-inv');document.getElementById('iv-c').value='RRSP/REER'">+ Agregar aporte</button>
+          <span>📋 Aportes RRSP</span>
+          <button class="btn-p" onclick="openAporteModal();setTimeout(()=>{document.getElementById('ap-cuenta').value='RRSP/REER'},100)">+ Agregar</button>
         </div>
-        <div class="txs">
-          <table class="tbl"><thead><tr><th>Fecha</th><th>ETF</th><th>Tipo</th><th style="text-align:right">Monto</th><th style="text-align:right">Rend.</th></tr></thead>
+        <div class="txs" style="max-height:140px">
+          <table class="tbl"><thead><tr><th>Fecha</th><th>Cuenta</th><th>Notas</th><th style="text-align:right">Monto</th></tr></thead>
           <tbody id="rrsp-tx-body"></tbody></table>
         </div>
         <div class="divider"></div>
-        <div class="al al-b"><div class="ad"></div><span>Maximiza CELI primero — retiros 100% libres de impuestos. Luego RRSP para reducir ingreso gravable.</span></div>
-        <div class="al al-b"><div class="ad"></div><span>Con $21,420 en RRSP ahorrarías hasta <span id="rr-max-tax" style="color:#c084fc;font-weight:700">$9,371</span> en impuestos.</span></div>
+        <!-- Recomendador CELI vs RRSP -->
+        <div style="background:#0a0a0f;border:1px solid #00ff8830;border-radius:6px;padding:14px">
+          <div class="slbl" style="color:#00ff88;margin-bottom:10px">🎯 ¿CELI o RRSP este mes?</div>
+          <div id="rec-content"></div>
+        </div>
+        <div class="divider"></div>
+        <div class="al al-b" style="font-size:11px"><div class="ad"></div><span><strong>Estrategia FIRE Quebec:</strong> Si tu tasa marginal ≥ 35%, RRSP gana — el ahorro fiscal es enorme. Si es menor, CELI puede ser mejor por la flexibilidad.</span></div>
+        <div class="al al-b" style="font-size:11px"><div class="ad"></div><span>Con <strong id="rr-max-context">$32,490</strong> de aporte máximo y tu tasa actual, ahorrarías hasta <span id="rr-max-tax" style="color:#c084fc;font-weight:700">$0</span> en impuestos.</span></div>
       </div>
     </div>
   </div>
@@ -1053,31 +1085,90 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
 
   <div class="fire-subpage" id="fp-proyeccion">
     <div class="kpi-row k4">
-      <div class="kpi-card" style="--accent:#00ff88"><div class="kl">Capital actual</div><div class="kv" id="pr-cap">—</div><div class="ks">Punto de partida</div></div>
-      <div class="kpi-card" style="--accent:#4d9fff"><div class="kl">Año FIRE</div><div class="kv" id="pr-anio">2054</div><div class="ks" id="pr-edad">Edad 61</div></div>
-      <div class="kpi-card" style="--accent:#c084fc"><div class="kl">Retorno asumido</div><div class="kv" id="pr-ret">7.0%</div><div class="ks">Anual nominal</div></div>
-      <div class="kpi-card" style="--accent:#ffaa00"><div class="kl">Inflación</div><div class="kv">2.5%</div><div class="ks">Real = 4.5%</div></div>
+      <div class="kpi-card" style="--accent:#00ff88"><div class="kl">Capital actual</div><div class="kv" id="pr-cap">—</div><div class="ks" id="pr-cap-s">Punto de partida</div></div>
+      <div class="kpi-card" style="--accent:#4d9fff"><div class="kl">Año FIRE proyectado</div><div class="kv" id="pr-anio">—</div><div class="ks" id="pr-edad">Edad —</div></div>
+      <div class="kpi-card" style="--accent:#c084fc"><div class="kl">% Real (tu portafolio)</div><div class="kv" id="pr-real-pct">—</div><div class="ks">Detectado del portafolio</div></div>
+      <div class="kpi-card" style="--accent:#ffaa00"><div class="kl">Modo de vista</div><div class="kv" style="font-size:14px"><span id="pr-modo-lbl">NOMINAL</span></div><div class="ks">Nominal vs Real</div></div>
+    </div>
+    <!-- Controles de proyección -->
+    <div class="panel mb">
+      <div class="pt">
+        <span>⚙️ Parámetros de proyección</span>
+        <div style="display:flex;gap:6px">
+          <button class="btn-sm" id="proj-mode-nom" onclick="setProjModo('nominal')" style="border-color:#00ff88;color:#00ff88">Nominal</button>
+          <button class="btn-sm" id="proj-mode-real" onclick="setProjModo('real')">Real (descontando inflación)</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div>
+          <div class="slider-row" style="margin-bottom:10px">
+            <span class="sl-lbl">Aporte mensual</span>
+            <input type="range" id="proj-ap" min="0" max="5000" step="50" value="1235" oninput="onProjConfigChange()">
+            <span class="sl-val" id="proj-ap-val">$1,235</span>
+          </div>
+          <div class="slider-row" style="margin-bottom:10px">
+            <span class="sl-lbl">Retorno anual</span>
+            <input type="range" id="proj-ret" min="2" max="15" step="0.5" value="7" oninput="onProjConfigChange()">
+            <span class="sl-val" id="proj-ret-val">7.0%</span>
+          </div>
+        </div>
+        <div>
+          <div class="slider-row" style="margin-bottom:10px">
+            <span class="sl-lbl">Inflación anual</span>
+            <input type="range" id="proj-infl" min="0" max="6" step="0.25" value="2.5" oninput="onProjConfigChange()">
+            <span class="sl-val" id="proj-infl-val">2.5%</span>
+          </div>
+          <div style="background:#0a0a0f;border:1px solid #1a1a2e;border-radius:5px;padding:10px;margin-top:8px">
+            <div class="slbl">RETORNO REAL = NOMINAL − INFLACIÓN</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#00ff88;margin-top:4px" id="proj-real-calc">7.0% − 2.5% = 4.5%</div>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="g2">
       <div class="panel">
         <div class="pt">
-          <span>Proyección anual</span>
-          <div style="display:flex;gap:6px">
-            <button class="btn-sm" onclick="setProjScenario('conservador')">3.5%</button>
-            <button class="btn-sm" onclick="setProjScenario('base')">5%</button>
-            <button class="btn-sm" id="proj-sc-btn" onclick="setProjScenario('optimista')" style="border-color:#00ff88;color:#00ff88">7%</button>
-          </div>
+          <span>📅 Tabla year-by-year</span>
+          <span style="font-size:9px;color:#444" id="proj-tbl-info">—</span>
         </div>
         <div class="proj-scroll">
           <table class="proj-tbl">
-            <thead><tr><th>Año</th><th>Edad</th><th style="text-align:right">Inicio</th><th style="text-align:right">Aportes</th><th style="text-align:right">Rend.</th><th style="text-align:right">Final</th><th style="text-align:right">%</th><th style="text-align:right">FIRE?</th></tr></thead>
+            <thead><tr><th>Año</th><th>Edad</th><th style="text-align:right">Inicio</th><th style="text-align:right">Aportes</th><th style="text-align:right">Rend.</th><th style="text-align:right">Final</th><th style="text-align:right">%</th><th style="text-align:right">Hito</th></tr></thead>
             <tbody id="proj-body"></tbody>
           </table>
         </div>
       </div>
       <div class="panel">
-        <div class="pt">Proyección visual</div>
+        <div class="pt">📊 4 escenarios simultáneos</div>
+        <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+          <span class="badge" style="background:#ffaa0018;color:#ffaa00;border:1px solid #ffaa0035;font-size:9px;padding:3px 8px">🐢 Conservador 5%</span>
+          <span class="badge" style="background:#4d9fff18;color:#4d9fff;border:1px solid #4d9fff35;font-size:9px;padding:3px 8px">⚖️ Base 7%</span>
+          <span class="badge" style="background:#00ff8818;color:#00ff88;border:1px solid #00ff8835;font-size:9px;padding:3px 8px">🚀 Optimista 9%</span>
+          <span class="badge" style="background:#c084fc18;color:#c084fc;border:1px solid #c084fc35;font-size:9px;padding:3px 8px">💎 Tu Personal <span id="proj-pers-pct">—</span></span>
+        </div>
         <div class="cw-xl"><canvas id="projChart"></canvas></div>
+      </div>
+    </div>
+    <!-- Resumen aporte vs interés -->
+    <div class="panel mb">
+      <div class="pt">💎 Aporte total vs ganancia por interés compuesto</div>
+      <p style="font-size:11px;color:#666;margin:0 0 12px;line-height:1.5">El interés compuesto es lo que hace posible el FIRE. Al final del camino, tu ganancia por intereses generalmente supera ampliamente lo que aportaste.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+        <div style="background:#4d9fff10;border:1px solid #4d9fff30;border-radius:6px;padding:14px;text-align:center">
+          <div class="slbl" style="color:#4d9fff">TOTAL APORTADO</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:20px;color:#4d9fff;font-weight:700;margin-top:6px" id="prox-aportado">—</div>
+          <div style="font-size:10px;color:#666;margin-top:4px" id="prox-aportado-s">Lo que sale de tu bolsillo</div>
+        </div>
+        <div style="background:#00ff8810;border:1px solid #00ff8830;border-radius:6px;padding:14px;text-align:center">
+          <div class="slbl" style="color:#00ff88">GANANCIA INTERÉS</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:20px;color:#00ff88;font-weight:700;margin-top:6px" id="prox-ganancia">—</div>
+          <div style="font-size:10px;color:#666;margin-top:4px" id="prox-ganancia-s">El milagro del compuesto</div>
+        </div>
+        <div style="background:#c084fc10;border:1px solid #c084fc30;border-radius:6px;padding:14px;text-align:center">
+          <div class="slbl" style="color:#c084fc">TOTAL FINAL</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:20px;color:#c084fc;font-weight:700;margin-top:6px" id="prox-total">—</div>
+          <div style="font-size:10px;color:#666;margin-top:4px" id="prox-mult">—</div>
+        </div>
       </div>
     </div>
   </div>
@@ -1371,7 +1462,54 @@ function getFraseDelDia(){
   const t=parseFloat(localStorage.getItem('ft_fire_tasa')||'');
   if(!isNaN(t)&&t>0)FIRE.tasa=t/100;
 })();
-const CELI_LIMITES={2009:5000,2010:5000,2011:5000,2012:5000,2013:5500,2014:5500,2015:10000,2016:5500,2017:5500,2018:5500,2019:6000,2020:6000,2021:6000,2022:6000,2023:6500,2024:7000,2025:7000,2026:7000};
+// Límites TFSA por año - default del gobierno (editables por el usuario)
+const CELI_LIMITES_DEFAULT={2009:5000,2010:5000,2011:5000,2012:5000,2013:5500,2014:5500,2015:10000,2016:5500,2017:5500,2018:5500,2019:6000,2020:6000,2021:6000,2022:6000,2023:6500,2024:7000,2025:7000,2026:7000};
+let CELI_LIMITES={};
+function loadCeliLimites(){
+  const s=localStorage.getItem('ft_tfsa_limits');
+  if(s){try{CELI_LIMITES={...CELI_LIMITES_DEFAULT,...JSON.parse(s)}}catch(e){CELI_LIMITES={...CELI_LIMITES_DEFAULT}}}
+  else CELI_LIMITES={...CELI_LIMITES_DEFAULT};
+  // Auto-expandir hasta el año actual si falta
+  const yrActual=new Date().getFullYear();
+  for(let y=2009;y<=yrActual;y++){
+    if(CELI_LIMITES[y]===undefined)CELI_LIMITES[y]=0;
+  }
+}
+function saveCeliLimites(){localStorage.setItem('ft_tfsa_limits',JSON.stringify(CELI_LIMITES))}
+
+// Límites RRSP por año - default del gobierno (editables por el usuario)
+const RRSP_LIMITES_DEFAULT={2020:27230,2021:27830,2022:29210,2023:30780,2024:31560,2025:32490,2026:32490};
+let RRSP_LIMITES={};
+function loadRrspLimites(){
+  const s=localStorage.getItem('ft_rrsp_limits');
+  if(s){try{RRSP_LIMITES={...RRSP_LIMITES_DEFAULT,...JSON.parse(s)}}catch(e){RRSP_LIMITES={...RRSP_LIMITES_DEFAULT}}}
+  else RRSP_LIMITES={...RRSP_LIMITES_DEFAULT};
+  const yrActual=new Date().getFullYear();
+  for(let y=2020;y<=yrActual;y++){
+    if(RRSP_LIMITES[y]===undefined)RRSP_LIMITES[y]=0;
+  }
+}
+function saveRrspLimites(){localStorage.setItem('ft_rrsp_limits',JSON.stringify(RRSP_LIMITES))}
+
+// Configuración RRSP del usuario
+const RRSP_CONFIG_DEFAULT={ingresoBruto:97500,tasaMarginal:43.75,espacioNOA:0,anoNOA:new Date().getFullYear()-1,aportePlan:0};
+let RRSP_CONFIG={};
+function loadRrspConfig(){
+  const s=localStorage.getItem('ft_rrsp_config');
+  if(s){try{RRSP_CONFIG={...RRSP_CONFIG_DEFAULT,...JSON.parse(s)}}catch(e){RRSP_CONFIG={...RRSP_CONFIG_DEFAULT}}}
+  else RRSP_CONFIG={...RRSP_CONFIG_DEFAULT};
+}
+function saveRrspConfig(){localStorage.setItem('ft_rrsp_config',JSON.stringify(RRSP_CONFIG))}
+
+// Configuración Proyección
+const PROJ_CONFIG_DEFAULT={aporteMensual:1235,retornoBase:0.07,inflacion:0.025,modoVista:'nominal'};
+let PROJ_CONFIG={};
+function loadProjConfig(){
+  const s=localStorage.getItem('ft_proj_config');
+  if(s){try{PROJ_CONFIG={...PROJ_CONFIG_DEFAULT,...JSON.parse(s)}}catch(e){PROJ_CONFIG={...PROJ_CONFIG_DEFAULT}}}
+  else PROJ_CONFIG={...PROJ_CONFIG_DEFAULT};
+}
+function saveProjConfig(){localStorage.setItem('ft_proj_config',JSON.stringify(PROJ_CONFIG))}
 
 // Categorías base (semilla la primera vez)
 const SEED_CATS=[
@@ -2856,78 +2994,398 @@ function renderOverview(){
   updateSim();
 }
 function renderCeli(){
-  const txsCeli=fireTxs.filter(t=>t.cuenta==='TFSA/CELI');
-  const val=txsCeli.filter(t=>t.tipo==='Compra').reduce((s,t)=>s+t.monto,0)||FIRE.capital;
   const llegada=parseInt($('celi-llegada').value)||2019;
-  const limite=Object.entries(CELI_LIMITES).filter(([y])=>parseInt(y)>=llegada).reduce((s,[,v])=>s+v,0);
-  $('cl-val').textContent=fmt(val);$('cl-esp').textContent=fmtI(Math.max(limite-val,0));
-  $('cl-pct').textContent=(val/limite*100).toFixed(1)+'%';
-  const ret=txsCeli.reduce((s,t)=>t.precioAct&&t.precio?s+((t.precioAct-t.precio)/t.precio)*t.monto:s,0);
-  $('cl-ret').textContent=(ret>=0?'+':'')+fmt(ret);
-  $('cl-bar').style.width=Math.min((val/limite)*100,100)+'%';
-  $('cl-bar-lbl').textContent=fmtI(val)+' / '+fmtI(limite);
+  // Aportes reales a TFSA/CELI desde el sistema de aportes
+  const aportesCeli=aportes.filter(a=>a.cuenta==='TFSA/CELI'&&a.tipo==='Inversión');
+  const aportadoTotal=aportesCeli.reduce((s,a)=>s+parseFloat(a.monto),0);
+  // Valor real desde Portafolio (si existe)
+  const posCeli=posiciones.filter(p=>p.cuenta==='TFSA/CELI');
+  const valorPortafolio=posCeli.reduce((s,p)=>s+posValorActual(p),0);
+  const valorActual=valorPortafolio>0?valorPortafolio:aportadoTotal;
+  // Límite acumulado desde año de llegada
+  const limiteTotal=Object.entries(CELI_LIMITES).filter(([y])=>parseInt(y)>=llegada).reduce((s,[,v])=>s+(parseFloat(v)||0),0);
+  const espacio=limiteTotal-aportadoTotal;
+  // Rendimiento real
+  const costoCeli=posCeli.reduce((s,p)=>s+(parseFloat(p.costoTotal)||0),0);
+  const retorno=valorPortafolio>0?valorPortafolio-costoCeli:0;
+  // KPIs
+  $('cl-val').textContent=fmt(valorActual);
+  $('cl-esp').textContent=fmtI(Math.max(espacio,0));
+  $('cl-pct').textContent=limiteTotal>0?(aportadoTotal/limiteTotal*100).toFixed(1)+'%':'0.0%';
+  const retEl=$('cl-ret');
+  retEl.textContent=valorPortafolio>0?(retorno>=0?'+':'')+fmt(retorno):'—';
+  retEl.style.color=valorPortafolio>0?(retorno>=0?'#00ff88':'#ff4d4d'):'#444';
+  // Barra
+  $('cl-bar').style.width=Math.min((aportadoTotal/limiteTotal)*100,100)+'%';
+  $('cl-bar-lbl').textContent=fmtI(aportadoTotal)+' / '+fmtI(limiteTotal);
+  $('cl-bar').style.background=aportadoTotal>limiteTotal?'#ff4d4d':'#4d9fff';
+  // Alerta de exceso
+  const alertWrap=$('cl-alert-wrap');
+  if(aportadoTotal>limiteTotal&&limiteTotal>0){
+    const exceso=aportadoTotal-limiteTotal;
+    const multaMensual=exceso*0.01;
+    alertWrap.style.display='block';
+    alertWrap.innerHTML=`<div class="al al-r" style="font-size:13px"><div class="ad"></div><span>⚠️ <strong>Te pasaste del límite TFSA por ${fmt(exceso)}</strong> — Multa estimada CRA: <strong>${fmt(multaMensual)}/mes</strong> (1% mensual sobre el exceso). Considera retirar el exceso para evitar cargos adicionales.</span></div>`;
+  }else if(aportadoTotal>limiteTotal*0.9&&limiteTotal>0){
+    alertWrap.style.display='block';
+    alertWrap.innerHTML=`<div class="al al-y" style="font-size:13px"><div class="ad"></div><span>📊 Estás al ${(aportadoTotal/limiteTotal*100).toFixed(1)}% de tu límite TFSA — Te quedan ${fmt(espacio)} de espacio.</span></div>`;
+  }else{
+    alertWrap.style.display='none';
+  }
+  // Tabla y chart
   updateCeliTable();
-  $('celi-tx-body').innerHTML=txsCeli.length?[...txsCeli].sort((a,b)=>new Date(b.date)-new Date(a.date)).map(t=>{const r=t.precioAct&&t.precio?((t.precioAct-t.precio)/t.precio*100).toFixed(2)+'%':'—';const rc=t.precioAct&&t.precio&&t.precioAct>=t.precio?'#00ff88':'#ff4d4d';return`<tr><td style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#444">${t.date}</td><td style="color:#00ff88">${t.etf}</td><td style="color:${t.tipo==='Compra'?'#00ff88':'#ff4d4d'}">${t.tipo}</td><td style="text-align:right;font-family:'JetBrains Mono',monospace;color:#fff">${fmt(t.monto)}</td><td style="text-align:right;color:${rc}">${r}</td></tr>`}).join(''):'<tr><td colspan="5" style="color:#1a1a2e;padding:12px 0;font-size:9px">SIN APORTES</td></tr>';
+  renderCeliEvolChart();
+  // Aportes recientes
+  const sortedAp=[...aportesCeli].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  $('celi-tx-body').innerHTML=sortedAp.length?sortedAp.map(a=>`<tr><td style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#444">${a.date}</td><td style="color:#4d9fff;font-size:10px">TFSA</td><td style="color:#888;font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.notas||'—'}</td><td style="text-align:right;font-family:'JetBrains Mono',monospace;color:#33aa66">${fmt(a.monto)}</td></tr>`).join(''):'<tr><td colspan="4" style="color:#1a1a2e;padding:12px 0;font-size:9px;text-align:center">SIN APORTES — REGISTRA UNO EN FINTRACK</td></tr>';
 }
+function updateCeliLlegada(){renderCeli()}
 function updateCeliTable(){
   const llegada=parseInt($('celi-llegada').value)||2019;
   const anioActual=new Date().getFullYear();
-  let acum=0;
-  const txsCeli=fireTxs.filter(t=>t.cuenta==='TFSA/CELI'&&t.tipo==='Compra');
-  let total=0;
-  $('celi-tbl-body').innerHTML=Object.entries(CELI_LIMITES).map(([yr,lim])=>{
-    const y=parseInt(yr);acum+=lim;
+  const aportesCeli=aportes.filter(a=>a.cuenta==='TFSA/CELI'&&a.tipo==='Inversión');
+  let acum=0,total=0;
+  const yrs=Object.keys(CELI_LIMITES).map(y=>parseInt(y)).sort((a,b)=>a-b);
+  $('celi-tbl-body').innerHTML=yrs.map(y=>{
+    const lim=parseFloat(CELI_LIMITES[y])||0;
+    acum+=lim;
     if(y<llegada)return'';
     total+=lim;
-    const aportado=txsCeli.filter(t=>new Date(t.date).getFullYear()===y).reduce((s,t)=>s+t.monto,0);
-    const saldo=lim-aportado;const isCur=y===anioActual;const hasAp=aportado>0;
-    return`<tr class="${isCur?'yr-cur':hasAp?'yr-has':''}"><td>${yr}${isCur?' ←':''}</td><td style="text-align:right">${fmtI(lim)}</td><td style="text-align:right">${fmtI(acum)}</td><td style="text-align:right;color:${hasAp?'#00ff88':'#333'}">${hasAp?fmtI(aportado):'—'}</td><td style="text-align:right;color:${saldo>0?'#4d9fff':'#ff4d4d'}">${fmtI(saldo)}</td></tr>`;
+    const aportadoYr=aportesCeli.filter(a=>new Date(a.date).getFullYear()===y).reduce((s,a)=>s+parseFloat(a.monto),0);
+    const saldo=lim-aportadoYr;
+    const isCur=y===anioActual;
+    const hasAp=aportadoYr>0;
+    const limFmt=`<input class="celi-lim-edit" data-yr="${y}" value="${lim}" type="number" min="0" step="100" onchange="onCeliLimitEdit(${y},this.value)" style="width:75px;background:#0a0a0f;border:1px solid #1a1a2e;color:${lim===0?'#ff8c42':'#fff'};font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 5px;border-radius:3px;text-align:right"/>`;
+    const pendiente=lim===0?'<span style="font-size:9px;color:#ff8c42;margin-left:4px">⚠️</span>':'';
+    return`<tr class="${isCur?'yr-cur':hasAp?'yr-has':''}"><td style="font-family:'JetBrains Mono',monospace">${y}${isCur?' ←':''}</td><td style="text-align:right">${limFmt}${pendiente}</td><td style="text-align:right">${fmtI(acum)}</td><td style="text-align:right;color:${hasAp?'#00ff88':'#333'}">${hasAp?fmtI(aportadoYr):'—'}</td><td style="text-align:right;color:${saldo>=0?'#4d9fff':'#ff4d4d'}">${saldo>=0?fmtI(saldo):'-'+fmtI(Math.abs(saldo))}</td></tr>`;
   }).join('');
   $('celi-limite-total').textContent=fmtI(total);
 }
-function renderRRSP(){
-  const txsRRSP=fireTxs.filter(t=>t.cuenta==='RRSP/REER'&&t.tipo==='Compra');
-  const val=txsRRSP.reduce((s,t)=>s+t.monto,0);
-  $('rr-val').textContent=fmt(val);
-  updateRRSP();
-  const maxTax=parseFloat($('rr-lim').value||21420)*parseFloat($('rr-tasa').value||43.75)/100;
-  $('rr-max-tax').textContent=fmtI(maxTax);
-  $('rrsp-tx-body').innerHTML=txsRRSP.length?[...txsRRSP].sort((a,b)=>new Date(b.date)-new Date(a.date)).map(t=>{const r=t.precioAct&&t.precio?((t.precioAct-t.precio)/t.precio*100).toFixed(2)+'%':'—';const rc=t.precioAct&&t.precio&&t.precioAct>=t.precio?'#00ff88':'#ff4d4d';return`<tr><td style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#444">${t.date}</td><td style="color:#c084fc">${t.etf}</td><td>${t.tipo}</td><td style="text-align:right;color:#fff">${fmt(t.monto)}</td><td style="text-align:right;color:${rc}">${r}</td></tr>`}).join(''):'<tr><td colspan="5" style="color:#1a1a2e;padding:12px 0;font-size:9px">SIN APORTES</td></tr>';
+function onCeliLimitEdit(yr,val){
+  const v=parseFloat(val)||0;
+  CELI_LIMITES[yr]=v;
+  saveCeliLimites();
+  renderCeli();
+  toast(`Límite ${yr}: ${fmtI(v)} ✓`,'ok');
 }
-function updateRRSP(){
-  const ing=parseFloat($('rr-ing').value||97500),tasa=parseFloat($('rr-tasa').value||43.75)/100;
-  const lim=parseFloat($('rr-lim').value||21420),ap=parseFloat($('rr-ap-plan').value||0);
-  const tax=Math.min(ap,lim)*tasa;
-  $('rr-tax').textContent=fmtI(tax);$('rr-saved').textContent=fmtI(fireTxs.filter(t=>t.cuenta==='RRSP/REER').reduce((s,t)=>s+t.monto,0)*tasa);
-  $('rr-tax-big').textContent=fmtI(tax);$('rr-ap-show').textContent=fmtI(ap);
+function agregarAnoCeli(){
+  const yrs=Object.keys(CELI_LIMITES).map(y=>parseInt(y));
+  const maxYr=Math.max(...yrs);
+  const nuevo=maxYr+1;
+  CELI_LIMITES[nuevo]=0;
+  saveCeliLimites();
+  renderCeli();
+  toast(`Año ${nuevo} agregado — edita el límite`,'ok');
+}
+function renderCeliEvolChart(){
+  if(charts.celiEvol)charts.celiEvol.destroy();
+  const llegada=parseInt($('celi-llegada').value)||2019;
   const anioActual=new Date().getFullYear();
-  $('rrsp-sim-body').innerHTML=Array.from({length:10},(_,i)=>anioActual+i).map(yr=>{
-    const apYr=yr===anioActual?ap:0;const ig=ing-apYr;const impCon=ig*tasa;const ahorro=(ing*tasa)-impCon;
-    return`<tr><td style="color:${yr===anioActual?'#00ff88':'#555'}">${yr}</td><td style="text-align:right;color:${apYr>0?'#c084fc':'#333'}">${apYr>0?fmtI(apYr):'—'}</td><td style="text-align:right">${fmtI(ig)}</td><td style="text-align:right">${fmtI(impCon)}</td><td style="text-align:right;color:${ahorro>0?'#00ff88':'#555'}">${ahorro>0?fmtI(ahorro):'—'}</td></tr>`;
+  const aportesCeli=aportes.filter(a=>a.cuenta==='TFSA/CELI'&&a.tipo==='Inversión');
+  const yrs=Object.keys(CELI_LIMITES).map(y=>parseInt(y)).filter(y=>y>=llegada&&y<=anioActual).sort((a,b)=>a-b);
+  let limAcum=0,apAcum=0;
+  const labels=[],dataLim=[],dataAp=[];
+  yrs.forEach(y=>{
+    limAcum+=parseFloat(CELI_LIMITES[y])||0;
+    apAcum+=aportesCeli.filter(a=>new Date(a.date).getFullYear()===y).reduce((s,a)=>s+parseFloat(a.monto),0);
+    labels.push(y);
+    dataLim.push(Math.round(limAcum));
+    dataAp.push(Math.round(apAcum));
+  });
+  charts.celiEvol=new Chart($('celi-evol-chart'),{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'Límite acumulado',data:dataLim,borderColor:'#4d9fff',backgroundColor:'#4d9fff15',fill:true,tension:0.3,pointRadius:3,borderWidth:2},
+      {label:'Aportado',data:dataAp,borderColor:'#00ff88',backgroundColor:'#00ff8810',fill:true,tension:0.3,pointRadius:3,borderWidth:2}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#666',font:{size:9},boxWidth:10}}},scales:{x:{ticks:{color:'#444',font:{size:8}},grid:{color:'#1a1a2e'}},y:{ticks:{color:'#444',font:{size:8},callback:v=>fmtM(v)},grid:{color:'#1a1a2e'},beginAtZero:true}}}
+  });
+}
+function renderRRSP(){
+  // Aportes reales a RRSP
+  const aportesRrsp=aportes.filter(a=>a.cuenta==='RRSP/REER'&&a.tipo==='Inversión');
+  const aportadoTotal=aportesRrsp.reduce((s,a)=>s+parseFloat(a.monto),0);
+  // Valor real del portafolio en RRSP
+  const posRrsp=posiciones.filter(p=>p.cuenta==='RRSP/REER');
+  const valorPortafolio=posRrsp.reduce((s,p)=>s+posValorActual(p),0);
+  const valorActual=valorPortafolio>0?valorPortafolio:aportadoTotal;
+  $('rr-val').textContent=fmt(valorActual);
+  $('rr-val-s').textContent=valorPortafolio>0?'📊 Valor del portafolio':'Aportado';
+  // Llenar select años NOA
+  const sel=$('rr-noa-year');
+  if(sel&&sel.options.length===0){
+    const yrAct=new Date().getFullYear();
+    let html='';
+    for(let y=yrAct;y>=yrAct-5;y--)html+=`<option value="${y}">${y}</option>`;
+    sel.innerHTML=html;
+    sel.value=RRSP_CONFIG.anoNOA||(yrAct-1);
+  }
+  // Set sliders desde config
+  $('rr-noa').value=RRSP_CONFIG.espacioNOA;
+  $('rr-ing-slider').value=RRSP_CONFIG.ingresoBruto;
+  $('rr-tasa-slider').value=RRSP_CONFIG.tasaMarginal;
+  $('rr-ap-slider').value=RRSP_CONFIG.aportePlan||0;
+  if($('rr-noa-year'))$('rr-noa-year').value=RRSP_CONFIG.anoNOA;
+  // Simulador
+  updateRRSPSim();
+  // Tabla aportes
+  const sortedAp=[...aportesRrsp].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  $('rrsp-tx-body').innerHTML=sortedAp.length?sortedAp.map(a=>`<tr><td style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#444">${a.date}</td><td style="color:#c084fc;font-size:10px">RRSP</td><td style="color:#888;font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.notas||'—'}</td><td style="text-align:right;font-family:'JetBrains Mono',monospace;color:#33aa66">${fmt(a.monto)}</td></tr>`).join(''):'<tr><td colspan="4" style="color:#1a1a2e;padding:12px 0;font-size:9px;text-align:center">SIN APORTES — REGISTRA UNO EN FINTRACK</td></tr>';
+  // Recomendador
+  renderRecomendador();
+}
+function onRrspConfigChange(){
+  RRSP_CONFIG.espacioNOA=parseFloat($('rr-noa').value)||0;
+  RRSP_CONFIG.anoNOA=parseInt($('rr-noa-year').value)||new Date().getFullYear()-1;
+  RRSP_CONFIG.ingresoBruto=parseFloat($('rr-ing-slider').value)||97500;
+  RRSP_CONFIG.tasaMarginal=parseFloat($('rr-tasa-slider').value)||43.75;
+  RRSP_CONFIG.aportePlan=parseFloat($('rr-ap-slider').value)||0;
+  saveRrspConfig();
+  // Actualizar labels de sliders
+  $('rr-ing-val').textContent=fmtI(RRSP_CONFIG.ingresoBruto);
+  $('rr-tasa-val').textContent=RRSP_CONFIG.tasaMarginal.toFixed(2)+'%';
+  $('rr-ap-val').textContent=fmtI(RRSP_CONFIG.aportePlan);
+  updateRRSPSim();
+  renderRecomendador();
+}
+function calcEspacioRrsp(){
+  // Espacio = NOA + (18% del ingreso del año actual)
+  const espacioBase=RRSP_CONFIG.espacioNOA||0;
+  const espacioNuevo=RRSP_CONFIG.ingresoBruto*0.18;
+  const aportesRrsp=aportes.filter(a=>a.cuenta==='RRSP/REER'&&a.tipo==='Inversión');
+  const aportadoTotal=aportesRrsp.reduce((s,a)=>s+parseFloat(a.monto),0);
+  return Math.max(espacioBase+espacioNuevo-aportadoTotal,0);
+}
+function updateRRSPSim(){
+  const tasa=RRSP_CONFIG.tasaMarginal/100;
+  const ap=RRSP_CONFIG.aportePlan;
+  const ing=RRSP_CONFIG.ingresoBruto;
+  const espacioDisp=calcEspacioRrsp();
+  // KPIs
+  $('rr-esp').textContent=fmtI(espacioDisp);
+  $('rr-esp-s').textContent=`NOA ${RRSP_CONFIG.anoNOA} + 18% × ${fmtI(ing)}`;
+  const apEfectivo=Math.min(ap,espacioDisp);
+  const tax=apEfectivo*tasa;
+  $('rr-tax').textContent=fmtI(tax);
+  $('rr-tax-s').textContent=ap>espacioDisp?'⚠️ Excede espacio':'Si aportas el plan';
+  // Ahorro acumulado por aportes históricos × tasa
+  const aportesRrsp=aportes.filter(a=>a.cuenta==='RRSP/REER'&&a.tipo==='Inversión');
+  const ahorroAcum=aportesRrsp.reduce((s,a)=>s+parseFloat(a.monto),0)*tasa;
+  $('rr-saved').textContent=fmtI(ahorroAcum);
+  // Resultado grande
+  $('rr-tax-big').textContent=fmtI(tax);
+  $('rr-ap-show').textContent=fmtI(ap);
+  // Max ahorro contextual
+  const yrAct=new Date().getFullYear();
+  const limAct=parseFloat(RRSP_LIMITES[yrAct])||32490;
+  $('rr-max-context').textContent=fmtI(limAct);
+  $('rr-max-tax').textContent=fmtI(limAct*tasa);
+  // Tabla simulador
+  const yrs=Array.from({length:6},(_,i)=>yrAct+i);
+  $('rrsp-sim-body').innerHTML=yrs.map(yr=>{
+    const apYr=yr===yrAct?ap:0;
+    const ig=ing-apYr;
+    const impSin=ing*tasa;
+    const impCon=ig*tasa;
+    const ahorro=impSin-impCon;
+    return`<tr><td style="font-family:'JetBrains Mono',monospace;color:${yr===yrAct?'#00ff88':'#555'}">${yr}${yr===yrAct?' ←':''}</td><td style="text-align:right;color:${apYr>0?'#c084fc':'#333'}">${apYr>0?fmtI(apYr):'—'}</td><td style="text-align:right">${fmtI(ig)}</td><td style="text-align:right">${fmtI(impCon)}</td><td style="text-align:right;color:${ahorro>0?'#00ff88':'#555'}">${ahorro>0?fmtI(ahorro):'—'}</td></tr>`;
   }).join('');
 }
-function renderProyeccion(){
-  const cap=fireCapital();const meta=FIRE.meta;
-  const aporte=parseFloat($('sim-ap')?.value||2000);
-  $('pr-cap').textContent=fmt(cap);$('pr-ret').textContent=(projRetorno*100).toFixed(1)+'%';
-  const res=calcFire(cap,aporte,projRetorno,meta,FIRE.edad);
-  $('pr-anio').textContent=res.anio;$('pr-edad').textContent='Edad '+res.edad;
-  let c=cap;const anioBase=new Date().getFullYear();const rows=[];const lb=[],dt=[],dtMeta=[];
-  for(let i=0;i<45;i++){
-    const yr=anioBase+i,edad=FIRE.edad+i,aportes=aporte*12;
-    const rend=c*projRetorno;const cf=c+aportes+rend;const pct=Math.min(cf/meta*100,999);
-    rows.push({yr,edad,ci:c,ap:aportes,rend,cf,pct,fire:cf>=meta});
-    lb.push(yr);dt.push(Math.round(cf));dtMeta.push(meta);
-    c=cf;if(cf>=meta*3)break;
+function renderRecomendador(){
+  const tasa=RRSP_CONFIG.tasaMarginal;
+  const espacioRrsp=calcEspacioRrsp();
+  // Espacio CELI
+  const llegada=parseInt($('celi-llegada')?.value)||2019;
+  const aportesCeli=aportes.filter(a=>a.cuenta==='TFSA/CELI'&&a.tipo==='Inversión');
+  const aportadoCeli=aportesCeli.reduce((s,a)=>s+parseFloat(a.monto),0);
+  const limiteCeli=Object.entries(CELI_LIMITES).filter(([y])=>parseInt(y)>=llegada).reduce((s,[,v])=>s+(parseFloat(v)||0),0);
+  const espacioCeli=Math.max(limiteCeli-aportadoCeli,0);
+  // Aporte mensual
+  const inv=VASIJAS.find(v=>v.key==='inv')||{pct:25};
+  const aporteMes=SAL*inv.pct/100;
+  // LÓGICA RECOMENDACIÓN
+  let rec={celi:0,rrsp:0,texto:'',color:'#00ff88'};
+  if(espacioCeli<=0&&espacioRrsp<=0){
+    rec={celi:0,rrsp:0,texto:'⚠️ Maximizaste ambas cuentas registradas. Considera cuenta no registrada.',color:'#ffaa00'};
+  }else if(espacioCeli<=0){
+    rec={celi:0,rrsp:aporteMes,texto:'Tu CELI está lleno. Todo a RRSP este mes.',color:'#c084fc'};
+  }else if(espacioRrsp<=0){
+    rec={celi:aporteMes,rrsp:0,texto:'Tu RRSP está lleno. Todo a CELI este mes.',color:'#4d9fff'};
+  }else if(tasa>=35){
+    // Tasa alta: priorizar RRSP por ahorro fiscal grande
+    rec={celi:aporteMes*0.30,rrsp:aporteMes*0.70,texto:`Tu tasa marginal es ${tasa.toFixed(1)}%. RRSP te ahorra ${fmtI(aporteMes*0.70*tasa/100)} en impuestos este mes.`,color:'#c084fc'};
+  }else{
+    // Tasa baja: CELI primero (flexibilidad)
+    rec={celi:aporteMes*0.70,rrsp:aporteMes*0.30,texto:`Tu tasa marginal es ${tasa.toFixed(1)}%. CELI primero — más flexible y libre de impuestos.`,color:'#4d9fff'};
   }
-  $('proj-body').innerHTML=rows.map(r=>`<tr class="${r.fire?'fire-row':r.pct>80?'near-row':''}"><td>${r.yr}</td><td style="text-align:right">${r.edad}</td><td style="text-align:right">${fmtM(r.ci)}</td><td style="text-align:right">${fmtM(r.ap)}</td><td style="text-align:right">${fmtM(r.rend)}</td><td style="text-align:right">${fmtM(r.cf)}</td><td style="text-align:right">${r.pct.toFixed(1)}%</td><td style="text-align:right">${r.fire?'🔥':''}</td></tr>`).join('');
-  if(charts.proj)charts.proj.destroy();
-  charts.proj=new Chart($('projChart'),{type:'line',data:{labels:lb,datasets:[{label:'Patrimonio',data:dt,borderColor:'#00ff88',backgroundColor:'#00ff8808',fill:true,tension:0.4,pointRadius:2,borderWidth:2},{label:'Meta FIRE',data:dtMeta,borderColor:'#ff4d4d',borderDash:[6,3],fill:false,pointRadius:0,borderWidth:1.5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#555',font:{size:9},boxWidth:10}}},scales:{x:{ticks:{color:'#444',font:{size:8},maxTicksLimit:10},grid:{color:'#1a1a2e'}},y:{ticks:{color:'#444',font:{size:8},callback:v=>fmtM(v)},grid:{color:'#1a1a2e'},beginAtZero:true}}}});
+  $('rec-content').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div style="background:#4d9fff10;border:1px solid #4d9fff30;border-radius:5px;padding:10px;text-align:center">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#4d9fff;letter-spacing:1px">CELI / TFSA</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:18px;color:#4d9fff;font-weight:700;margin-top:4px">${fmtI(rec.celi)}</div>
+        <div style="font-size:10px;color:#666;margin-top:2px">${aporteMes>0?(rec.celi/aporteMes*100).toFixed(0):0}% del aporte</div>
+      </div>
+      <div style="background:#c084fc10;border:1px solid #c084fc30;border-radius:5px;padding:10px;text-align:center">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#c084fc;letter-spacing:1px">RRSP / REER</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:18px;color:#c084fc;font-weight:700;margin-top:4px">${fmtI(rec.rrsp)}</div>
+        <div style="font-size:10px;color:#666;margin-top:2px">${aporteMes>0?(rec.rrsp/aporteMes*100).toFixed(0):0}% del aporte</div>
+      </div>
+    </div>
+    <p style="font-size:11px;color:${rec.color};line-height:1.4;margin:0">${rec.texto}</p>
+    <p style="font-size:10px;color:#444;margin-top:6px;line-height:1.4">📊 Aporte mensual disponible (${inv.pct}% del salario): ${fmtI(aporteMes)} · Espacio CELI: ${fmtI(espacioCeli)} · Espacio RRSP: ${fmtI(espacioRrsp)}</p>
+  `;
 }
+function updateRRSP(){onRrspConfigChange()}
+function renderProyeccion(){
+  // Capital actual
+  const aportadoTot=fireCapital();
+  const lastPat=lastSegPat();
+  const portafolioVal=portafolioTotal();
+  const portafolioCosto=portafolioCostoTotal();
+  let cap;
+  if(portafolioVal>0)cap=portafolioVal;
+  else if(lastPat!==null)cap=lastPat;
+  else cap=aportadoTot;
+  // Sincronizar sliders con config
+  $('proj-ap').value=PROJ_CONFIG.aporteMensual;
+  $('proj-ret').value=PROJ_CONFIG.retornoBase*100;
+  $('proj-infl').value=PROJ_CONFIG.inflacion*100;
+  $('proj-ap-val').textContent=fmtI(PROJ_CONFIG.aporteMensual);
+  $('proj-ret-val').textContent=(PROJ_CONFIG.retornoBase*100).toFixed(1)+'%';
+  $('proj-infl-val').textContent=(PROJ_CONFIG.inflacion*100).toFixed(1)+'%';
+  // Calcular % real del usuario desde portafolio
+  let pctReal=0.07;// fallback
+  let pctRealLabel='—';
+  if(portafolioCosto>0&&portafolioVal>0){
+    // Asumimos que el rendimiento es anualizado simple del portafolio actual
+    const rendPct=(portafolioVal-portafolioCosto)/portafolioCosto;
+    if(rendPct>-0.5&&rendPct<2){
+      pctReal=rendPct;
+      pctRealLabel=(rendPct*100).toFixed(2)+'%';
+    }
+  }
+  $('pr-real-pct').textContent=pctRealLabel;
+  $('proj-pers-pct').textContent=portafolioCosto>0?(pctReal*100).toFixed(1)+'%':'sin datos';
+  // Modo
+  const modo=PROJ_CONFIG.modoVista;
+  $('pr-modo-lbl').textContent=modo.toUpperCase();
+  // Sync visual modo botones
+  $('proj-mode-nom').style.borderColor=modo==='nominal'?'#00ff88':'#1a1a2e';
+  $('proj-mode-nom').style.color=modo==='nominal'?'#00ff88':'#333';
+  $('proj-mode-real').style.borderColor=modo==='real'?'#00ff88':'#1a1a2e';
+  $('proj-mode-real').style.color=modo==='real'?'#00ff88':'#333';
+  // Calculo retorno real
+  const retNomBase=PROJ_CONFIG.retornoBase;
+  const infl=PROJ_CONFIG.inflacion;
+  const retReal=retNomBase-infl;
+  $('proj-real-calc').textContent=`${(retNomBase*100).toFixed(1)}% − ${(infl*100).toFixed(1)}% = ${(retReal*100).toFixed(1)}%`;
+  // Retorno aplicado según modo
+  const retAplicado=modo==='real'?retReal:retNomBase;
+  // Capital y meta
+  $('pr-cap').textContent=fmt(cap);
+  $('pr-cap-s').textContent=portafolioVal>0?'📊 Del portafolio':lastPat!==null?'📅 Del Seguimiento':'Suma aportes';
+  const aporteMes=PROJ_CONFIG.aporteMensual;
+  const meta=FIRE.meta;
+  // Calcular FIRE base (escenario seleccionado)
+  const resBase=calcFireProj(cap,aporteMes,retAplicado,meta,FIRE.edad);
+  $('pr-anio').textContent=resBase.anio;
+  $('pr-edad').textContent='Edad '+resBase.edad;
+  $('proj-tbl-info').textContent=`Escenario base ${(retAplicado*100).toFixed(1)}% · ${modo}`;
+  // Generar tabla detallada (escenario base)
+  const rows=[];
+  let c=cap;
+  const anioBase=new Date().getFullYear();
+  let totalAportadoFuturo=0;
+  let cfFinal=cap;
+  for(let i=0;i<50;i++){
+    const yr=anioBase+i,edad=FIRE.edad+i,aportesAnuales=aporteMes*12;
+    const rend=c*retAplicado;
+    const cf=c+aportesAnuales+rend;
+    const pct=meta>0?Math.min(cf/meta*100,999):0;
+    // Detectar hitos (10%, 25%, 50%, 75%, 100%)
+    const pctAnt=meta>0?Math.min(c/meta*100,999):0;
+    let hito='';
+    if(pctAnt<10&&pct>=10)hito='🎯 10%';
+    else if(pctAnt<25&&pct>=25)hito='⭐ 25%';
+    else if(pctAnt<50&&pct>=50)hito='🌟 50%';
+    else if(pctAnt<75&&pct>=75)hito='💎 75%';
+    else if(pctAnt<100&&pct>=100)hito='🔥 FIRE!';
+    rows.push({yr,edad,ci:c,ap:aportesAnuales,rend,cf,pct,hito});
+    totalAportadoFuturo+=aportesAnuales;
+    cfFinal=cf;
+    c=cf;
+    if(cf>=meta*1.5)break;
+  }
+  $('proj-body').innerHTML=rows.map(r=>{
+    const isFire=r.hito==='🔥 FIRE!';
+    const isHito=r.hito&&!isFire;
+    return`<tr class="${isFire?'fire-row':isHito?'near-row':''}"><td>${r.yr}</td><td style="text-align:right">${r.edad}</td><td style="text-align:right">${fmtM(r.ci)}</td><td style="text-align:right">${fmtM(r.ap)}</td><td style="text-align:right">${fmtM(r.rend)}</td><td style="text-align:right;font-weight:${isFire||isHito?'700':'400'}">${fmtM(r.cf)}</td><td style="text-align:right">${r.pct.toFixed(1)}%</td><td style="text-align:right;font-size:10px">${r.hito}</td></tr>`;
+  }).join('');
+  // Sección resumen aporte vs ganancia
+  const ganancia=cfFinal-cap-totalAportadoFuturo;
+  $('prox-aportado').textContent=fmtM(totalAportadoFuturo);
+  $('prox-aportado-s').textContent=`${rows.length} años × ${fmtI(aporteMes)}/mes`;
+  $('prox-ganancia').textContent=fmtM(ganancia);
+  $('prox-ganancia-s').textContent=totalAportadoFuturo>0?`${(ganancia/totalAportadoFuturo).toFixed(1)}× lo aportado`:'—';
+  $('prox-total').textContent=fmtM(cfFinal);
+  $('prox-mult').textContent=cap>0?`${(cfFinal/cap).toFixed(0)}× tu capital actual`:'—';
+  // Chart con 4 escenarios
+  if(charts.proj)charts.proj.destroy();
+  const escenarios=[
+    {label:'🐢 Conservador 5%',ret:0.05-(modo==='real'?infl:0),color:'#ffaa00'},
+    {label:'⚖️ Base 7%',ret:0.07-(modo==='real'?infl:0),color:'#4d9fff'},
+    {label:'🚀 Optimista 9%',ret:0.09-(modo==='real'?infl:0),color:'#00ff88'},
+    {label:`💎 Tu Personal ${(pctReal*100).toFixed(1)}%`,ret:pctReal-(modo==='real'?infl:0),color:'#c084fc'}
+  ];
+  const labels=[];
+  const datasets=escenarios.map(esc=>{
+    const data=[];
+    let cc=cap;
+    for(let i=0;i<=45;i++){
+      if(i===0)labels.push(anioBase+i);
+      data.push(Math.round(cc));
+      cc=cc*(1+esc.ret)+aporteMes*12;
+    }
+    return {label:esc.label,data,borderColor:esc.color,backgroundColor:esc.color+'08',fill:false,tension:0.3,pointRadius:0,borderWidth:2};
+  });
+  // Asegurar labels completos
+  if(labels.length<46){
+    for(let i=labels.length;i<=45;i++)labels.push(anioBase+i);
+  }
+  // Línea meta
+  datasets.push({label:'Meta FIRE',data:Array(labels.length).fill(meta),borderColor:'#ff4d4d',borderDash:[6,3],fill:false,pointRadius:0,borderWidth:1.5});
+  charts.proj=new Chart($('projChart'),{
+    type:'line',
+    data:{labels,datasets},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#666',font:{size:9},boxWidth:10}},tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${fmtM(ctx.raw)}`}}},scales:{x:{ticks:{color:'#444',font:{size:8},maxTicksLimit:10},grid:{color:'#1a1a2e'}},y:{ticks:{color:'#444',font:{size:8},callback:v=>fmtM(v)},grid:{color:'#1a1a2e'},beginAtZero:true}}}
+  });
+}
+function calcFireProj(cap,aporteMes,retorno,meta,edad){
+  let c=cap,a=edad,yr=new Date().getFullYear();
+  for(let i=0;i<80;i++){
+    c=c*(1+retorno)+aporteMes*12;
+    a++;yr++;
+    if(c>=meta)return{edad:a,anio:yr,capital:c};
+  }
+  return{edad:a,anio:yr,capital:c};
+}
+function onProjConfigChange(){
+  PROJ_CONFIG.aporteMensual=parseFloat($('proj-ap').value)||1235;
+  PROJ_CONFIG.retornoBase=(parseFloat($('proj-ret').value)||7)/100;
+  PROJ_CONFIG.inflacion=(parseFloat($('proj-infl').value)||2.5)/100;
+  saveProjConfig();
+  renderProyeccion();
+}
+function setProjModo(modo){
+  PROJ_CONFIG.modoVista=modo;
+  saveProjConfig();
+  renderProyeccion();
+}
+// Mantener compatibilidad con función vieja
 function setProjScenario(s){
-  projRetorno=s==='conservador'?0.035:s==='base'?0.05:0.07;
-  document.querySelectorAll('#fp-proyeccion .btn-sm').forEach(b=>{b.style.borderColor='#1a1a2e';b.style.color='#333'});
-  event.target.style.borderColor='#00ff88';event.target.style.color='#00ff88';
+  const ret={conservador:0.05,base:0.07,optimista:0.09}[s]||0.07;
+  PROJ_CONFIG.retornoBase=ret;
+  saveProjConfig();
   renderProyeccion();
 }
 function renderSeguimiento(){
@@ -3560,6 +4018,10 @@ async function init(){
   loadProductosLocal();
   loadPosicionesLocal();
   loadHistorialPreciosLocal();
+  loadCeliLimites();
+  loadRrspLimites();
+  loadRrspConfig();
+  loadProjConfig();
   // Mostrar saludo y frase en la pantalla de carga
   const lgreetingEl=$('lgreeting');
   if(lgreetingEl){
