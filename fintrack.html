@@ -2053,16 +2053,36 @@ function dedupeCats(){
 // Migración: agregar campo 'desde' a categorías que no lo tienen
 function migrateCatsVigencia(){
   let firstMes=null;
-  // Buscar primer mes con datos
+  // Prioridad 1: primer mes con datos (gastos)
   if(expenses.length){
     const sorted=expenses.map(e=>e.date).filter(d=>d).sort();
     if(sorted.length)firstMes=sorted[0].substring(0,7);
   }
-  if(!firstMes)firstMes=new Date().toISOString().substring(0,7);
+  // Prioridad 2: fecha de inicio FIRE del usuario
+  if(!firstMes&&USER&&USER.fechaInicioFire){
+    let f=USER.fechaInicioFire;
+    if(f instanceof Date)f=f.toISOString().split('T')[0];
+    if(typeof f==='string'&&f.match(/^\d{4}-\d{2}/)){
+      firstMes=f.substring(0,7);
+    }
+  }
+  // Prioridad 3: enero del año actual (no el mes actual)
+  if(!firstMes)firstMes=new Date().getFullYear()+'-01';
   let migrated=false;
+  // Detectar si todas las cats tienen el mismo desde = mes actual (síntoma del bug viejo)
+  const todayYM=new Date().toISOString().substring(0,7);
+  const allSameToday=CATS.length>0&&CATS.every(c=>c.desde===todayYM);
+  // Si todas tienen mes actual y NO hay gastos en ese mes → migrar a firstMes (fix retroactivo)
+  const hayGastosEnEseMes=expenses.some(e=>e.date&&e.date.substring(0,7)===todayYM);
+  const aplicarFix=allSameToday&&!hayGastosEnEseMes&&firstMes!==todayYM;
   CATS.forEach(c=>{
     // 'desde' falta: cubre undefined, null, '', false, 0
     if(!c.desde||typeof c.desde!=='string'||!c.desde.match(/^\d{4}-\d{2}$/)){
+      c.desde=firstMes;
+      migrated=true;
+    }
+    // Fix retroactivo: si todas las cats fueron sembradas con mes actual incorrectamente
+    else if(aplicarFix&&c.desde===todayYM){
       c.desde=firstMes;
       migrated=true;
     }
@@ -2800,15 +2820,27 @@ function renderKPIs(ts,t,apTotal,apInv,apSeg){
   const ingreso=sr.total;
   apTotal=apTotal||0;apInv=apInv||0;apSeg=apSeg||0;
 
-  // KPI 1: Disponible (descuenta gastos + aportes REALES + aportes PLANEADOS faltantes)
-  // Plan = lo que vas a aportar/mes según APORTE_FIRE; restamos del salario para mostrar disponible real para gastos
+  // KPI 1: Disponible REAL (descuenta gastos + aportes REALES hechos)
+  // Lógica híbrida: mostramos REAL y agregamos comparación con "si cumples plan"
   const apPlanFire=APORTE_FIRE.aporteTotalMes||0;
-  // Si ya aportaste real, restar lo MAYOR entre aporte real y plan
-  const apDescontar=Math.max(apTotal,apPlanFire);
-  const disp=Math.max(ingreso-ts-apDescontar,0);
-  const dispPct=ingreso>0?(disp/ingreso)*100:0;
-  $('k-disp').textContent=fmt(disp);
-  $('k-disp-sub').innerHTML=`<span style="color:${subColor(100-dispPct,'expense')}">${dispPct.toFixed(0)}% restante</span> · de ${fmtI(ingreso)} (- aportes ${fmtI(apDescontar)})`;
+  const dispReal=Math.max(ingreso-ts-apTotal,0);
+  const dispSiCumplesPlan=Math.max(ingreso-ts-apPlanFire,0);
+  const dispPct=ingreso>0?(dispReal/ingreso)*100:0;
+  $('k-disp').textContent=fmt(dispReal);
+  // Subtítulo informativo: muestra real vs si cumples plan
+  let subTxt='';
+  if(apTotal>=apPlanFire){
+    // Ya cumpliste el plan
+    subTxt=`<span style="color:#00ff88">✓ Plan cumplido</span> · ${dispPct.toFixed(0)}% de ${fmtI(ingreso)}`;
+  }else if(apTotal>0){
+    // Aportaste algo pero falta
+    const falta=apPlanFire-apTotal;
+    subTxt=`<span style="color:#ffaa00">${dispPct.toFixed(0)}%</span> · si cumples plan: <span style="color:#666">${fmtI(dispSiCumplesPlan)}</span> (faltan ${fmtI(falta)})`;
+  }else{
+    // No has aportado aún
+    subTxt=`<span style="color:${subColor(100-dispPct,'expense')}">${dispPct.toFixed(0)}%</span> · si cumples plan: <span style="color:#666">${fmtI(dispSiCumplesPlan)}</span>`;
+  }
+  $('k-disp-sub').innerHTML=subTxt;
   $('k-disp-bar').style.width=dispPct.toFixed(1)+'%';
   $('k-disp-bar').style.background=barColor(100-dispPct,'expense');
 
