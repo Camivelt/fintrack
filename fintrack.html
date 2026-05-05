@@ -3129,9 +3129,9 @@ function eliminarAnoCeli(yr){
 function renderCeliEvolChart(){
   if(charts.celiEvol)charts.celiEvol.destroy();
   const llegada=parseInt($('celi-llegada').value)||2019;
-  const anioActual=new Date().getFullYear();
   const aportesCeli=aportes.filter(a=>a.cuenta==='TFSA/CELI'&&a.tipo==='Inversión');
-  const yrs=Object.keys(CELI_LIMITES).map(y=>parseInt(y)).filter(y=>y>=llegada&&y<=anioActual).sort((a,b)=>a-b);
+  // Mostrar todos los años desde llegada en adelante (incluye años futuros agregados)
+  const yrs=Object.keys(CELI_LIMITES).map(y=>parseInt(y)).filter(y=>y>=llegada).sort((a,b)=>a-b);
   let limAcum=0,apAcum=0;
   const labels=[],dataLim=[],dataAp=[];
   yrs.forEach(y=>{
