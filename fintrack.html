@@ -267,6 +267,7 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
 .tok{background:#0d0d14;border-color:#00ff88;color:#00ff88}
 .twarn{background:#0d0d14;border-color:#ffaa00;color:#ffaa00}
 .terr{background:#0d0d14;border-color:#ff4d4d;color:#ff4d4d}
+.tinfo{background:#0d0d14;border-color:#4d9fff;color:#4d9fff}
 
 .lov{position:fixed;inset:0;background:#0a0a0f;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200;transition:opacity 0.5s}
 .lov.hidden{opacity:0;pointer-events:none}
@@ -1356,12 +1357,13 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
   </div>
 
   <div style="padding-top:14px;border-top:1px solid #1a1a2e">
-    <div class="slbl" style="color:#ffaa00;margin-bottom:8px">🎉 HITOS</div>
-    <p style="font-size:11px;color:#888;margin-bottom:10px;line-height:1.5">Celebra tus logros — cada vez que cruzas 10%, 25%, 50%, 75% y 100% de tu meta FIRE, aparece una celebración.</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <div class="slbl" style="color:#ffaa00;margin-bottom:8px">🎉 HITOS & 🔔 RECORDATORIOS</div>
+    <p style="font-size:11px;color:#888;margin-bottom:10px;line-height:1.5">Hitos: celebra tus logros (10%, 25%, 50%, 75%, 100% de FIRE).<br>Recordatorios: alertas inteligentes sobre precios, aportes, gastos, y progreso del fondo.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
       <button class="btn-cancel" onclick="testConfetti()" style="padding:8px;font-size:11px;border-color:#ffaa00;color:#ffaa00">🎊 Probar confetti</button>
       <button class="btn-cancel" onclick="resetHitos()" style="padding:8px;font-size:11px">🔄 Resetear hitos</button>
     </div>
+    <button class="btn-cancel" onclick="cm('mo-tools');setTimeout(testRecordatorios,400)" style="padding:8px;font-size:11px;width:100%;border-color:#4d9fff;color:#4d9fff">🔔 Verificar recordatorios ahora</button>
   </div>
 
   <div class="ma" style="margin-top:18px">
@@ -5004,6 +5006,136 @@ function triggerImportFile(){
   input.click();
 }
 
+// 🔔 RECORDATORIOS INTELIGENTES — Detecta situaciones y notifica al usuario
+// Cooldown: cada recordatorio se muestra como máximo 1 vez por día
+function getRecordatoriosShown(){
+  try{return JSON.parse(localStorage.getItem('ft_recordatorios_shown')||'{}')}
+  catch(e){return {}}
+}
+function markRecordatorioShown(key){
+  const data=getRecordatoriosShown();
+  data[key]=new Date().toISOString().split('T')[0];
+  localStorage.setItem('ft_recordatorios_shown',JSON.stringify(data));
+}
+function recordatorioShownToday(key){
+  const data=getRecordatoriosShown();
+  const today=new Date().toISOString().split('T')[0];
+  return data[key]===today;
+}
+// Toast extendido con duración configurable
+function toastLong(msg,type,durationMs=5500){
+  const t=$('toast');
+  if(!t)return;
+  t.textContent=msg;
+  t.className=`toast ${type==='ok'?'tok':type==='warn'?'twarn':type==='info'?'tinfo':'terr'} show`;
+  // Asegurar que la clase 'tinfo' tenga estilo (azul)
+  setTimeout(()=>t.classList.remove('show'),durationMs);
+}
+// Verificar todos los recordatorios y mostrarlos escalonados
+function checkRecordatorios(){
+  const recordatorios=[];
+  const today=new Date();
+  const todayStr=today.toISOString().split('T')[0];
+  const dayOfMonth=today.getDate();
+  // ── Recordatorio 1: Precios desactualizados (>30 días) ──
+  if(!recordatorioShownToday('precios')){
+    if(historialPrecios&&historialPrecios.length>0&&posiciones&&posiciones.length>0){
+      // Encontrar la fecha más reciente de actualización de precio
+      const fechas=historialPrecios.map(h=>h.fecha).filter(f=>f).sort();
+      const ultima=fechas[fechas.length-1];
+      if(ultima){
+        const ultimaDate=new Date(ultima+'T00:00:00');
+        const diffDias=Math.floor((today-ultimaDate)/(1000*60*60*24));
+        if(diffDias>=30){
+          recordatorios.push({
+            key:'precios',
+            msg:`💲 Hace ${diffDias} días que no actualizas precios. Actualiza para ver rendimientos al día.`,
+            type:'warn'
+          });
+        }
+      }
+    }
+  }
+  // ── Recordatorio 2: Sin aportes este mes (después del día 15) ──
+  if(!recordatorioShownToday('aporte_mes')&&dayOfMonth>=15){
+    const mesActual=todayStr.substring(0,7);
+    const aporteMes=aportes.filter(a=>a.date&&a.date.startsWith(mesActual));
+    if(aporteMes.length===0){
+      const mesNombre=mkLbl(mesActual);
+      recordatorios.push({
+        key:'aporte_mes',
+        msg:`💰 No has registrado aporte en ${mesNombre}. Tu plan FIRE es ${fmtI(APORTE_FIRE.aporteTotalMes)}/mes.`,
+        type:'info'
+      });
+    }
+  }
+  // ── Recordatorio 3: Sin gastos > 7 días ──
+  if(!recordatorioShownToday('gastos_pausa')&&expenses.length>0){
+    const fechasGastos=expenses.map(e=>e.date).filter(f=>f).sort();
+    const ultimoGasto=fechasGastos[fechasGastos.length-1];
+    if(ultimoGasto){
+      const ultimoDate=new Date(ultimoGasto+'T00:00:00');
+      const diffDias=Math.floor((today-ultimoDate)/(1000*60*60*24));
+      if(diffDias>=7&&diffDias<=60){
+        recordatorios.push({
+          key:'gastos_pausa',
+          msg:`🤔 Han pasado ${diffDias} días sin gastos registrados. ¿Se te olvidó alguno?`,
+          type:'info'
+        });
+      }
+    }
+  }
+  // ── Recordatorio 4: Fondo seguridad ≥ 80% meta ──
+  if(!recordatorioShownToday('fondo_cerca')){
+    const fondoActual=fondoSeguridadActual();
+    const meta=APORTE_FIRE.fondoMeta;
+    if(meta>0&&fondoActual>0){
+      const pct=(fondoActual/meta)*100;
+      if(pct>=80&&pct<100){
+        recordatorios.push({
+          key:'fondo_cerca',
+          msg:`🎯 ¡Tu fondo está al ${pct.toFixed(0)}%! Faltan ${fmtI(meta-fondoActual)} para llegar a Fase B y aportar todo a inversión.`,
+          type:'ok'
+        });
+      }
+    }
+  }
+  // ── Recordatorio 5: Cumpleaños cuenta FIRE (días 30, 60, 90, 100, 180, 365, etc.) ──
+  if(!recordatorioShownToday('milestone_dias')){
+    const dias=getDiasFire();
+    const milestonesRedondos=[30,60,90,100,180,200,365,500,730,1000,1500,2000,3000];
+    if(milestonesRedondos.includes(dias)){
+      let emoji='🔥';
+      let extra='';
+      if(dias===30)extra=' — ¡un mes desde el inicio!';
+      else if(dias===100){emoji='💯';extra=' — ¡100 días de disciplina!';}
+      else if(dias===365){emoji='🎂';extra=' — ¡un año completo!';}
+      else if(dias===1000){emoji='🏆';extra=' — ¡4 cifras de constancia!';}
+      else extra=' — sigue así';
+      recordatorios.push({
+        key:'milestone_dias',
+        msg:`${emoji} Día ${dias.toLocaleString('es-CA')} en tu camino FIRE${extra}`,
+        type:'ok'
+      });
+    }
+  }
+  // Mostrar recordatorios escalonados (uno cada 3 segundos)
+  recordatorios.forEach((r,i)=>{
+    setTimeout(()=>{
+      toastLong(r.msg,r.type,6000);
+      markRecordatorioShown(r.key);
+    },i*3500);
+  });
+  return recordatorios.length;
+}
+// Función manual para test
+window.testRecordatorios=function(){
+  // Resetear cooldown para forzar mostrar todos
+  localStorage.removeItem('ft_recordatorios_shown');
+  const n=checkRecordatorios();
+  if(n===0)toast('Sin recordatorios activos en este momento','info');
+};
+
 // 🌅 ONBOARDING — Tour guiado primera vez
 const ONBOARDING_STEPS=[
   {target:'.logo',title:'¡Bienvenido a PHOENIX! 🔥',msg:'Tu sistema personal para alcanzar la libertad financiera. Vamos a darte un tour rápido (1 minuto).'},
@@ -5345,11 +5477,13 @@ async function init(){
   await new Promise(r=>setTimeout(r,400));
   $('lov').classList.add('hidden');
   renderAll();
-  // 🎨 FASE 4: Onboarding (solo primera vez) y check de hitos
+  // 🎨 FASE 4: Onboarding (solo primera vez), hitos y recordatorios
   if(isFirstTime()){
     setTimeout(()=>startOnboarding(),800);
   }else{
     setTimeout(()=>checkHitos(),1500);
+    // Recordatorios escalonados (no chocan con hitos porque empiezan en 4s)
+    setTimeout(()=>checkRecordatorios(),4000);
   }
 }
 init();
