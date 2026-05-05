@@ -36,6 +36,7 @@ body{background:#0a0a0f;font-family:'Rajdhani',sans-serif;color:#e0e0e0;min-heig
 .salary-badge:hover,.config-badge:hover{background:#00ff8825}
 .config-badge{color:#c084fc;background:#c084fc12;border-color:#c084fc30}
 .config-badge:hover{background:#c084fc25}
+.config-badge[style*="ffaa00"]:hover{background:#ffaa0025 !important}
 .sync-badge{font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 8px;border-radius:3px;border:1px solid}
 .sync-ok{color:#00ff88;border-color:#00ff8840;background:#00ff8810}
 .sync-err{color:#ff4d4d;border-color:#ff4d4d40;background:#ff4d4d10}
@@ -695,6 +696,7 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
     </div>
     <div class="clock-nav" id="clk">—</div>
     <div class="config-badge" onclick="om('mo-mgr');renderMgrTable()" title="Gestionar categorías">⚙ CATEGORÍAS</div>
+    <div class="config-badge" onclick="om('mo-tools')" title="Herramientas: backup, reporte, tutorial" style="color:#ffaa00;background:#ffaa0012;border-color:#ffaa0030">🛠️ HERRAMIENTAS</div>
     <div class="salary-badge" onclick="om('mo-salary')" title="Editar salario">✎ <span id="sal-disp">$4,940</span>/MES</div>
     <div class="sync-badge sync-ok" id="sync">● SHEETS</div>
   </div>
@@ -1326,6 +1328,57 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- 🛠️ MODAL HERRAMIENTAS (Fase 4) -->
+<div class="mo" id="mo-tools"><div class="md" style="max-width:540px">
+  <div class="mt2">🛠️ Herramientas PHOENIX</div>
+  <p style="font-size:11px;color:#666;margin-bottom:14px">Funciones avanzadas para gestionar tu información y tu experiencia.</p>
+  
+  <div style="margin-bottom:18px">
+    <div class="slbl" style="color:#00ff88;margin-bottom:8px">📥 BACKUP & RESTORE</div>
+    <p style="font-size:11px;color:#888;margin-bottom:10px;line-height:1.5">Exporta todos tus datos en un archivo JSON o restaura un backup anterior. Útil para cambiar de dispositivo o tener respaldos mensuales.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="btn-ok" onclick="exportarBackup()" style="padding:9px;font-size:12px">📤 Exportar todo</button>
+      <button class="btn-cancel" onclick="triggerImportFile()" style="padding:9px;font-size:12px;border-color:#4d9fff;color:#4d9fff">📥 Importar backup</button>
+    </div>
+  </div>
+
+  <div style="margin-bottom:18px;padding-top:14px;border-top:1px solid #1a1a2e">
+    <div class="slbl" style="color:#c084fc;margin-bottom:8px">📊 REPORTE MENSUAL</div>
+    <p style="font-size:11px;color:#888;margin-bottom:10px;line-height:1.5">Genera un reporte profesional del mes seleccionado con resumen ejecutivo, gastos por categoría, aportes y comparativa con el mes anterior. Listo para imprimir o guardar como PDF.</p>
+    <button class="btn-ok" onclick="cm('mo-tools');abrirReporteMensual()" style="padding:9px;font-size:12px;width:100%;background:#c084fc15;border-color:#c084fc;color:#c084fc">📄 Generar reporte de <span id="rpt-mes-disp">este mes</span></button>
+  </div>
+
+  <div style="margin-bottom:18px;padding-top:14px;border-top:1px solid #1a1a2e">
+    <div class="slbl" style="color:#4d9fff;margin-bottom:8px">🌅 TUTORIAL</div>
+    <p style="font-size:11px;color:#888;margin-bottom:10px;line-height:1.5">¿Quieres ver el tour guiado de la aplicación? Te muestra las funciones principales en 6 pasos.</p>
+    <button class="btn-ok" onclick="cm('mo-tools');startOnboarding(true)" style="padding:9px;font-size:12px;width:100%;background:#4d9fff15;border-color:#4d9fff;color:#4d9fff">🚀 Iniciar tutorial</button>
+  </div>
+
+  <div style="padding-top:14px;border-top:1px solid #1a1a2e">
+    <div class="slbl" style="color:#ffaa00;margin-bottom:8px">🎉 HITOS</div>
+    <p style="font-size:11px;color:#888;margin-bottom:10px;line-height:1.5">Celebra tus logros — cada vez que cruzas 10%, 25%, 50%, 75% y 100% de tu meta FIRE, aparece una celebración.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="btn-cancel" onclick="testConfetti()" style="padding:8px;font-size:11px;border-color:#ffaa00;color:#ffaa00">🎊 Probar confetti</button>
+      <button class="btn-cancel" onclick="resetHitos()" style="padding:8px;font-size:11px">🔄 Resetear hitos</button>
+    </div>
+  </div>
+
+  <div class="ma" style="margin-top:18px">
+    <button class="btn-cancel" onclick="cm('mo-tools')" style="width:100%">Cerrar</button>
+  </div>
+</div></div>
+
+<!-- 🎉 CONFETTI CANVAS + HITO MODAL (Fase 4) -->
+<canvas id="confetti-canvas" style="position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:9998;display:none"></canvas>
+<div class="mo" id="mo-hito"><div class="md" style="max-width:480px;text-align:center">
+  <div id="hito-icon" style="font-size:64px;line-height:1;margin-bottom:10px">🎉</div>
+  <div id="hito-title" style="font-family:'JetBrains Mono',monospace;font-size:18px;color:#00ff88;letter-spacing:2px;margin-bottom:8px;font-weight:700">¡HITO ALCANZADO!</div>
+  <div id="hito-pct" style="font-family:'JetBrains Mono',monospace;font-size:36px;font-weight:700;color:#ffaa00;margin-bottom:6px">25%</div>
+  <div id="hito-monto" style="font-size:14px;color:#888;margin-bottom:14px">$525,000 / $2,100,000</div>
+  <div id="hito-msg" style="font-size:13px;color:#bbb;line-height:1.5;padding:0 10px;margin-bottom:18px;font-style:italic">Vas por buen camino, sigue así.</div>
+  <button class="btn-ok" onclick="cm('mo-hito')" style="padding:10px 28px">¡Genial, sigamos!</button>
+</div></div>
 
 <script>
 // ══════════════════════════════════════════
@@ -2265,6 +2318,9 @@ function switchFireTab(tab,btn){
 function om(id){
   if(id==='mo-salary'){renderSalaryHistory();$('sal-new-mes').value=nextMonthAfterLatest();$('sal-new-monto').value=''}
   if(id==='mo-inv')$('iv-d').value=today();
+  if(id==='mo-tools'&&$('rpt-mes-disp')){
+    $('rpt-mes-disp').textContent=curMonth?mkLbl(curMonth):'este mes';
+  }
   document.getElementById(id).classList.add('show');
 }
 function cm(id){document.getElementById(id).classList.remove('show')}
@@ -4604,6 +4660,8 @@ async function saveAporte(){
   if(typeof renderPortafolio==='function')renderPortafolio();
   if(typeof renderOverview==='function')renderOverview();
   toast(`Aporte ${fmtI(monto)} a ${tipo}${vinculoMsg} ✓`,'ok');
+  // 🎉 FASE 4: Verificar si cruzaste un hito
+  setTimeout(()=>{if(typeof checkHitos==='function')checkHitos()},800);
 }
 async function delAporte(i){
   if(i<0||!aportes[i])return;
@@ -4743,6 +4801,438 @@ function getDiasFire(){
   const diff=Math.floor((hoy-inicio)/(1000*60*60*24));
   return Math.max(diff+1,1);
 }
+// ═══════════════════════════════════════════
+// 🎨 FASE 4 — DELUXE
+// ═══════════════════════════════════════════
+
+// 🎉 CONFETTI ENGINE
+function launchConfetti(durationMs=3500){
+  const canvas=$('confetti-canvas');
+  if(!canvas)return;
+  canvas.style.display='block';
+  canvas.width=window.innerWidth;
+  canvas.height=window.innerHeight;
+  const ctx=canvas.getContext('2d');
+  const colors=['#00ff88','#4d9fff','#c084fc','#ffaa00','#ff6b6b','#55ccff','#ffee55'];
+  const particles=[];
+  // Crear partículas
+  for(let i=0;i<150;i++){
+    particles.push({
+      x:Math.random()*canvas.width,
+      y:Math.random()*-canvas.height,
+      vx:(Math.random()-0.5)*4,
+      vy:Math.random()*3+2,
+      size:Math.random()*8+4,
+      color:colors[Math.floor(Math.random()*colors.length)],
+      rot:Math.random()*Math.PI*2,
+      vrot:(Math.random()-0.5)*0.2,
+      shape:Math.random()>0.5?'rect':'circle'
+    });
+  }
+  const start=Date.now();
+  function animate(){
+    const elapsed=Date.now()-start;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    particles.forEach(p=>{
+      p.x+=p.vx;
+      p.y+=p.vy;
+      p.vy+=0.08;// gravedad
+      p.rot+=p.vrot;
+      ctx.save();
+      ctx.translate(p.x,p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle=p.color;
+      if(p.shape==='rect'){
+        ctx.fillRect(-p.size/2,-p.size/4,p.size,p.size/2);
+      }else{
+        ctx.beginPath();
+        ctx.arc(0,0,p.size/2,0,Math.PI*2);
+        ctx.fill();
+      }
+      ctx.restore();
+    });
+    if(elapsed<durationMs){
+      requestAnimationFrame(animate);
+    }else{
+      canvas.style.display='none';
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+    }
+  }
+  animate();
+}
+
+// 🏆 SISTEMA DE HITOS
+const HITOS_DEFS=[
+  {pct:0.10,icon:'🌱',title:'¡PRIMER HITO!',msg:'Has alcanzado el 10% de tu meta FIRE. La semilla está plantada — el árbol crecerá con disciplina y paciencia.'},
+  {pct:0.25,icon:'🚀',title:'¡UN CUARTO DEL CAMINO!',msg:'25% conquistado. Estás demostrando que la disciplina vence al instinto. El interés compuesto ya empieza a trabajar para ti.'},
+  {pct:0.50,icon:'⚡',title:'¡MITAD DEL CAMINO!',msg:'50% logrado. Ya estás más cerca de la libertad que del inicio. Lo que viene será exponencial: el dinero generará dinero.'},
+  {pct:0.75,icon:'💎',title:'¡TRES CUARTOS!',msg:'75%. Estás en la recta final. Mantén el rumbo — los últimos años son cuando el compuesto rinde más.'},
+  {pct:1.00,icon:'🔥',title:'¡FIRE ALCANZADO!',msg:'Lo lograste. Tu libertad financiera es real. Ahora puedes elegir trabajar por pasión, no por necesidad. Felicitaciones, Camilo.'}
+];
+function loadHitosAlcanzados(){
+  try{return JSON.parse(localStorage.getItem('ft_hitos_alcanzados')||'[]')}
+  catch(e){return []}
+}
+function saveHitosAlcanzados(arr){
+  localStorage.setItem('ft_hitos_alcanzados',JSON.stringify(arr));
+}
+// Detectar y celebrar hitos nuevos
+function checkHitos(){
+  const cap=fireCapital();
+  const meta=FIRE.meta;
+  if(meta<=0||cap<=0)return;
+  const pctActual=cap/meta;
+  const alcanzados=loadHitosAlcanzados();
+  // Buscar el hito más alto NO alcanzado y que ya cruzaste
+  let hitoNuevo=null;
+  HITOS_DEFS.forEach(h=>{
+    if(pctActual>=h.pct&&!alcanzados.includes(h.pct)){
+      hitoNuevo=h;// el último que cumple es el más alto
+    }
+  });
+  if(hitoNuevo){
+    // Marcar como alcanzado
+    alcanzados.push(hitoNuevo.pct);
+    saveHitosAlcanzados(alcanzados);
+    // Mostrar modal y confetti
+    setTimeout(()=>celebrarHito(hitoNuevo,cap,meta),1200);
+  }
+}
+function celebrarHito(h,cap,meta){
+  $('hito-icon').textContent=h.icon;
+  $('hito-title').textContent=h.title;
+  $('hito-pct').textContent=`${(h.pct*100).toFixed(0)}%`;
+  $('hito-monto').textContent=`${fmt(cap)} / ${fmt(meta)}`;
+  $('hito-msg').textContent=h.msg;
+  om('mo-hito');
+  launchConfetti(4500);
+}
+// Función manual para test (accesible desde consola)
+window.testConfetti=function(){launchConfetti(3500);};
+window.testHito=function(pct){
+  const h=HITOS_DEFS.find(x=>x.pct===pct)||HITOS_DEFS[1];
+  celebrarHito(h,FIRE.meta*pct,FIRE.meta);
+};
+// Función para resetear hitos (útil para testing)
+window.resetHitos=function(){
+  localStorage.removeItem('ft_hitos_alcanzados');
+  toast('Hitos reseteados','warn');
+};
+
+// 📥 IMPORTAR / EXPORTAR JSON COMPLETO
+function exportarBackup(){
+  const backup={
+    version:'phoenix-1.0',
+    timestamp:new Date().toISOString(),
+    user:USER,
+    aporteFire:APORTE_FIRE,
+    cats:CATS,
+    vasijas:VASIJAS,
+    expenses,
+    aportes,
+    seguimiento,
+    salaryHistory,
+    productos,
+    posiciones,
+    historialPrecios,
+    tfsaLimits:TFSA_LIMITS,
+    rrspLimits:RRSP_LIMITS,
+    rrspConfig:RRSP_CONFIG,
+    rrspHistorial:RRSP_HISTORIAL,
+    projConfig:PROJ_CONFIG,
+    fireMeta:FIRE.meta,
+    fireGasto:FIRE.gasto,
+    fireTasa:FIRE.tasa,
+    hitosAlcanzados:loadHitosAlcanzados()
+  };
+  const json=JSON.stringify(backup,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  const fecha=new Date().toISOString().substring(0,10);
+  a.download=`phoenix-backup-${fecha}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('✓ Backup descargado','ok');
+}
+function importarBackup(file){
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!data.version||!data.version.startsWith('phoenix-')){
+        toast('⚠️ Archivo inválido','err');return;
+      }
+      if(!confirm(`¿Restaurar backup del ${data.timestamp?data.timestamp.substring(0,10):'?'}?\n\nEsto reemplazará TODOS tus datos actuales.`))return;
+      // Restaurar todo
+      if(data.user){USER=data.user;saveUser()}
+      if(data.aporteFire){APORTE_FIRE={...APORTE_FIRE_DEFAULT,...data.aporteFire};saveAporteFire()}
+      if(data.cats){CATS=data.cats;saveCatsLocal()}
+      if(data.vasijas){VASIJAS=data.vasijas;saveVasijasLocal()}
+      if(data.expenses){expenses=data.expenses}
+      if(data.aportes){aportes=data.aportes;localStorage.setItem('ft_aportes',JSON.stringify(aportes))}
+      if(data.seguimiento){seguimiento=data.seguimiento;localStorage.setItem('ft_seg',JSON.stringify(seguimiento))}
+      if(data.salaryHistory){salaryHistory=data.salaryHistory;localStorage.setItem('ft_salary_history',JSON.stringify(salaryHistory));SAL=getCurrentSalary()}
+      if(data.productos){productos=data.productos;localStorage.setItem('ft_productos',JSON.stringify(productos))}
+      if(data.posiciones){posiciones=data.posiciones;localStorage.setItem('ft_posiciones',JSON.stringify(posiciones))}
+      if(data.historialPrecios){historialPrecios=data.historialPrecios;localStorage.setItem('ft_historial_precios',JSON.stringify(historialPrecios))}
+      if(data.tfsaLimits){TFSA_LIMITS=data.tfsaLimits;localStorage.setItem('ft_tfsa_limits',JSON.stringify(TFSA_LIMITS))}
+      if(data.rrspLimits){RRSP_LIMITS=data.rrspLimits;localStorage.setItem('ft_rrsp_limits',JSON.stringify(RRSP_LIMITS))}
+      if(data.rrspConfig){RRSP_CONFIG=data.rrspConfig;localStorage.setItem('ft_rrsp_config',JSON.stringify(RRSP_CONFIG))}
+      if(data.rrspHistorial){RRSP_HISTORIAL=data.rrspHistorial;localStorage.setItem('ft_rrsp_historial',JSON.stringify(RRSP_HISTORIAL))}
+      if(data.projConfig){PROJ_CONFIG=data.projConfig;saveProjConfig()}
+      if(data.fireMeta){FIRE.meta=data.fireMeta;localStorage.setItem('ft_fire_meta',data.fireMeta)}
+      if(data.fireGasto){FIRE.gasto=data.fireGasto;localStorage.setItem('ft_fire_gasto',data.fireGasto)}
+      if(data.fireTasa){FIRE.tasa=data.fireTasa;localStorage.setItem('ft_fire_tasa',data.fireTasa)}
+      if(data.hitosAlcanzados){saveHitosAlcanzados(data.hitosAlcanzados)}
+      toast('✓ Backup restaurado — recargando...','ok');
+      setTimeout(()=>location.reload(),1500);
+    }catch(err){
+      console.error(err);
+      toast('❌ Error al leer backup','err');
+    }
+  };
+  reader.readAsText(file);
+}
+function triggerImportFile(){
+  const input=document.createElement('input');
+  input.type='file';
+  input.accept='.json,application/json';
+  input.onchange=e=>importarBackup(e.target.files[0]);
+  input.click();
+}
+
+// 🌅 ONBOARDING — Tour guiado primera vez
+const ONBOARDING_STEPS=[
+  {target:'.logo',title:'¡Bienvenido a PHOENIX! 🔥',msg:'Tu sistema personal para alcanzar la libertad financiera. Vamos a darte un tour rápido (1 minuto).'},
+  {target:'.tabs-wrap',title:'Dos pestañas principales',msg:'<strong>FINTRACK:</strong> Registra tus gastos diarios y mantén control del presupuesto.<br><br><strong>FIRE DASHBOARD:</strong> Visualiza tu progreso hacia la libertad financiera.'},
+  {target:'.kpi-row',title:'KPIs en tiempo real',msg:'Cada tarjeta muestra una métrica clave. <strong>Disponible</strong> es tu salario menos gastos. <strong>Aportes</strong> es lo que invertiste este mes.'},
+  {target:'#vasijas',title:'Sistema de Vasijas',msg:'Distribuye tu salario en 4 partes: <strong>Vivir (56%)</strong>, <strong>Fondo Seguridad (15%)</strong>, <strong>Inversión (25%)</strong> y <strong>Ocio (4%)</strong>. Te ayuda a no gastar más de lo planeado.'},
+  {target:'#perfil-badge',title:'Tu perfil PHOENIX',msg:'Click aquí para personalizar tu nombre, fecha de inicio FIRE, y configurar tu <strong>Plan de Aporte</strong> (cuánto va a inversión vs fondo seguridad).'},
+  {target:null,title:'¡Listo para empezar! 🚀',msg:'Registra tu primer gasto, configura tu plan FIRE, y ve creciendo poco a poco. La disciplina diaria construye la libertad de mañana.'}
+];
+function isFirstTime(){
+  return !localStorage.getItem('ft_onboarding_done');
+}
+function markOnboardingDone(){
+  localStorage.setItem('ft_onboarding_done','1');
+}
+function startOnboarding(forced=false){
+  if(!forced&&!isFirstTime())return;
+  showOnboardingStep(0);
+}
+function showOnboardingStep(idx){
+  const step=ONBOARDING_STEPS[idx];
+  if(!step){
+    closeOnboarding();
+    return;
+  }
+  // Crear o reutilizar overlay
+  let ov=$('onboard-ov');
+  if(!ov){
+    ov=document.createElement('div');
+    ov.id='onboard-ov';
+    ov.style.cssText='position:fixed;inset:0;background:#0a0a0fdd;z-index:9997;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px)';
+    document.body.appendChild(ov);
+  }
+  ov.style.display='flex';
+  // Resaltar target
+  document.querySelectorAll('.onboard-highlight').forEach(el=>{
+    el.classList.remove('onboard-highlight');
+    el.style.position='';
+    el.style.zIndex='';
+    el.style.boxShadow='';
+  });
+  if(step.target){
+    const el=document.querySelector(step.target);
+    if(el){
+      el.classList.add('onboard-highlight');
+      el.style.position='relative';
+      el.style.zIndex='9999';
+      el.style.boxShadow='0 0 0 4px #00ff8888, 0 0 30px #00ff8866';
+      el.style.borderRadius='8px';
+      el.style.transition='box-shadow 0.3s ease';
+      // Scroll suave al elemento
+      try{el.scrollIntoView({behavior:'smooth',block:'center'})}catch(e){}
+    }
+  }
+  // Tarjeta de instrucción
+  ov.innerHTML=`
+    <div style="background:#0d0d14;border:1px solid #00ff88;border-radius:10px;padding:24px;max-width:480px;box-shadow:0 10px 40px #00ff8830">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#444;letter-spacing:2px;margin-bottom:6px">PASO ${idx+1} DE ${ONBOARDING_STEPS.length}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:#00ff88;margin-bottom:12px">${step.title}</div>
+      <div style="font-size:13px;color:#bbb;line-height:1.6;margin-bottom:18px">${step.msg}</div>
+      <div style="display:flex;gap:8px;justify-content:space-between;align-items:center">
+        <button onclick="closeOnboarding();markOnboardingDone()" style="background:none;border:none;color:#444;font-size:11px;cursor:pointer;text-decoration:underline">Saltar tutorial</button>
+        <div style="display:flex;gap:8px">
+          ${idx>0?`<button onclick="showOnboardingStep(${idx-1})" style="background:none;border:1px solid #1a1a2e;color:#888;padding:8px 16px;border-radius:5px;cursor:pointer">← Atrás</button>`:''}
+          <button onclick="showOnboardingStep(${idx+1})" style="background:#00ff8815;border:1px solid #00ff88;color:#00ff88;padding:8px 20px;border-radius:5px;cursor:pointer;font-weight:700">${idx===ONBOARDING_STEPS.length-1?'¡Empezar! 🚀':'Siguiente →'}</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:4px;justify-content:center;margin-top:14px">
+        ${ONBOARDING_STEPS.map((_,i)=>`<div style="width:6px;height:6px;border-radius:50%;background:${i===idx?'#00ff88':i<idx?'#00ff8855':'#1a1a2e'}"></div>`).join('')}
+      </div>
+    </div>
+  `;
+}
+function closeOnboarding(){
+  const ov=$('onboard-ov');
+  if(ov)ov.style.display='none';
+  // Limpiar highlights
+  document.querySelectorAll('.onboard-highlight').forEach(el=>{
+    el.classList.remove('onboard-highlight');
+    el.style.position='';
+    el.style.zIndex='';
+    el.style.boxShadow='';
+  });
+  markOnboardingDone();
+}
+window.startOnboarding=startOnboarding;// para acceso manual
+
+// 📊 REPORTE MENSUAL IMPRIMIBLE
+function abrirReporteMensual(){
+  const mes=curMonth;
+  if(!mes){toast('Selecciona un mes primero','warn');return}
+  // Recolectar datos del mes
+  const exps=expenses.filter(e=>mkKey(e.date)===mes);
+  const aps=aportes.filter(a=>mkKey(a.date)===mes);
+  const totalGastos=exps.reduce((s,e)=>s+parseFloat(e.amount),0);
+  const totalAportes=aps.reduce((s,a)=>s+parseFloat(a.monto),0);
+  const totalInv=aps.filter(a=>a.tipo==='Inversión').reduce((s,a)=>s+parseFloat(a.monto),0);
+  const totalSeg=aps.filter(a=>a.tipo==='Fondo Seguridad').reduce((s,a)=>s+parseFloat(a.monto),0);
+  const ingreso=getCurrentSalary();
+  const dispReal=Math.max(ingreso-totalGastos-totalAportes,0);
+  // Agrupar gastos por categoría
+  const porCat={};
+  exps.forEach(e=>{
+    if(!porCat[e.cat])porCat[e.cat]={total:0,count:0,label:e.cat};
+    const cat=CATS.find(c=>c.key===e.cat);
+    if(cat)porCat[e.cat].label=cat.label;
+    porCat[e.cat].total+=parseFloat(e.amount);
+    porCat[e.cat].count++;
+  });
+  const catsArr=Object.values(porCat).sort((a,b)=>b.total-a.total);
+  // Comparativa con mes anterior
+  const mesPartes=mes.split('-');
+  let mesAntStr;
+  let yr=parseInt(mesPartes[0]),mo=parseInt(mesPartes[1])-1;
+  if(mo<1){mo=12;yr--}
+  mesAntStr=`${yr}-${String(mo).padStart(2,'0')}`;
+  const expsAnt=expenses.filter(e=>mkKey(e.date)===mesAntStr);
+  const totalAnt=expsAnt.reduce((s,e)=>s+parseFloat(e.amount),0);
+  const cambio=totalAnt>0?((totalGastos-totalAnt)/totalAnt*100):0;
+  // Construir HTML
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Reporte ${mkLbl(mes)} — PHOENIX</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+body{background:#fff;color:#222;padding:30px;max-width:900px;margin:0 auto}
+h1{font-size:28px;color:#00aa55;margin-bottom:4px}
+h2{font-size:18px;color:#444;margin:24px 0 12px;border-bottom:2px solid #00ff88;padding-bottom:6px}
+.sub{color:#888;font-size:13px;margin-bottom:20px}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.kpi{background:#f5f7fa;padding:14px;border-radius:8px;border-left:4px solid #00aa55}
+.kpi-lbl{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.kpi-val{font-size:22px;font-weight:700;color:#222}
+.kpi-sub{font-size:10px;color:#666;margin-top:2px}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:14px}
+th{background:#f5f7fa;padding:10px;text-align:left;font-size:11px;color:#666;text-transform:uppercase;letter-spacing:1px}
+td{padding:8px 10px;border-bottom:1px solid #eee}
+.amt{text-align:right;font-family:monospace;font-weight:600}
+.bar-ext{background:#eee;height:6px;border-radius:3px;overflow:hidden;margin-top:4px}
+.bar-int{height:100%}
+.compare{padding:14px;border-radius:8px;margin-bottom:14px}
+.up{background:#fee;color:#c33}
+.down{background:#efe;color:#3a8}
+.flat{background:#f5f7fa;color:#666}
+.btn-wrap{margin:30px 0;text-align:center}
+.btn-imp{background:#00aa55;color:#fff;border:none;padding:12px 30px;font-size:14px;border-radius:6px;cursor:pointer;font-weight:700}
+@media print{body{padding:10px}.btn-wrap{display:none}}
+.foot{margin-top:30px;padding-top:14px;border-top:1px solid #eee;font-size:11px;color:#888;text-align:center}
+</style></head><body>
+<h1>🔥 PHOENIX — Reporte Mensual</h1>
+<div class="sub">${mkLbl(mes)} · Generado para ${USER.nombre||'Camilo'} el ${new Date().toLocaleDateString('es-CA',{day:'2-digit',month:'long',year:'numeric'})}</div>
+
+<h2>📊 Resumen ejecutivo</h2>
+<div class="kpi-grid">
+  <div class="kpi"><div class="kpi-lbl">Ingreso</div><div class="kpi-val">${fmt(ingreso)}</div><div class="kpi-sub">salario del mes</div></div>
+  <div class="kpi" style="border-color:#cc4444"><div class="kpi-lbl">Gastos</div><div class="kpi-val">${fmt(totalGastos)}</div><div class="kpi-sub">${ingreso>0?(totalGastos/ingreso*100).toFixed(1):0}% del ingreso</div></div>
+  <div class="kpi" style="border-color:#9966cc"><div class="kpi-lbl">Aportes</div><div class="kpi-val">${fmt(totalAportes)}</div><div class="kpi-sub">${aps.length} registro${aps.length!==1?'s':''}</div></div>
+  <div class="kpi" style="border-color:#00aaff"><div class="kpi-lbl">Disponible</div><div class="kpi-val">${fmt(dispReal)}</div><div class="kpi-sub">tras todo</div></div>
+</div>
+
+${totalAnt>0?`<div class="compare ${cambio>5?'up':cambio<-5?'down':'flat'}">
+  <strong>vs. ${mkLbl(mesAntStr)}:</strong> ${cambio>0?'+':''}${cambio.toFixed(1)}% 
+  ${cambio>5?'⚠️ Gastaste más este mes':cambio<-5?'✅ Gastaste menos — ¡bien hecho!':'Casi igual al mes anterior'}
+  · Anterior: ${fmt(totalAnt)}
+</div>`:''}
+
+<h2>💰 Aportes del mes</h2>
+${aps.length?`<table>
+  <thead><tr><th>Fecha</th><th>Tipo</th><th>Cuenta</th><th class="amt">Monto</th></tr></thead>
+  <tbody>${[...aps].sort((a,b)=>a.date<b.date?1:-1).map(a=>`<tr>
+    <td>${a.date}</td>
+    <td><strong>${a.tipo||'—'}</strong></td>
+    <td>${a.cuenta||'—'}</td>
+    <td class="amt">${fmt(a.monto)}</td>
+  </tr>`).join('')}
+  <tr style="background:#f5f7fa;font-weight:700">
+    <td colspan="2">Total Inversión / Fondo</td>
+    <td>${fmtI(totalInv)} / ${fmtI(totalSeg)}</td>
+    <td class="amt">${fmt(totalAportes)}</td>
+  </tr>
+  </tbody>
+</table>`:'<p style="color:#888;font-style:italic">Sin aportes este mes</p>'}
+
+<h2>🛒 Gastos por categoría</h2>
+${catsArr.length?`<table>
+  <thead><tr><th>Categoría</th><th>Transacciones</th><th class="amt">Total</th><th>% del total</th></tr></thead>
+  <tbody>${catsArr.map(c=>{
+    const pct=totalGastos>0?(c.total/totalGastos*100):0;
+    return `<tr>
+      <td><strong>${c.label}</strong></td>
+      <td>${c.count}</td>
+      <td class="amt">${fmt(c.total)}</td>
+      <td>${pct.toFixed(1)}%<div class="bar-ext"><div class="bar-int" style="width:${pct}%;background:#00aa55"></div></div></td>
+    </tr>`;
+  }).join('')}
+  </tbody>
+</table>`:'<p style="color:#888;font-style:italic">Sin gastos este mes</p>'}
+
+<h2>📋 Detalle de transacciones</h2>
+${exps.length?`<table>
+  <thead><tr><th>Fecha</th><th>Descripción</th><th>Categoría</th><th class="amt">Monto</th></tr></thead>
+  <tbody>${[...exps].sort((a,b)=>a.date<b.date?1:-1).map(e=>{
+    const cat=CATS.find(c=>c.key===e.cat);
+    return `<tr>
+      <td>${e.date}</td>
+      <td>${e.desc||'—'}</td>
+      <td>${cat?cat.label:e.cat}</td>
+      <td class="amt">${fmt(e.amount)}</td>
+    </tr>`;
+  }).join('')}
+  </tbody>
+</table>`:'<p style="color:#888;font-style:italic">Sin gastos este mes</p>'}
+
+<div class="btn-wrap">
+  <button class="btn-imp" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+</div>
+
+<div class="foot">
+  PHOENIX — Tu sistema personal de libertad financiera<br>
+  Camino FIRE · ${USER.nombre||'Camilo'} · Día ${getDiasFire()}
+</div>
+</body></html>`;
+  // Abrir en ventana nueva
+  const w=window.open('','_blank');
+  if(!w){toast('Permite ventanas emergentes','warn');return}
+  w.document.write(html);
+  w.document.close();
+  toast('✓ Reporte generado','ok');
+}
+window.abrirReporteMensual=abrirReporteMensual;
+
 function updateClock(){
   $('clk').textContent=new Date().toLocaleString('es-CA',{weekday:'short',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'}).toUpperCase();
   // Saludo dinámico
@@ -4812,6 +5302,12 @@ async function init(){
   await new Promise(r=>setTimeout(r,400));
   $('lov').classList.add('hidden');
   renderAll();
+  // 🎨 FASE 4: Onboarding (solo primera vez) y check de hitos
+  if(isFirstTime()){
+    setTimeout(()=>startOnboarding(),800);
+  }else{
+    setTimeout(()=>checkHitos(),1500);
+  }
 }
 init();
 </script>
