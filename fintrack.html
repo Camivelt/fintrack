@@ -379,13 +379,13 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
 </div></div>
 
 <!-- Modal: Registrar aporte -->
-<div class="mo" id="mo-aporte"><div class="md">
+<div class="mo" id="mo-aporte"><div class="md" style="max-width:520px">
   <div class="mt2">💰 Registrar aporte</div>
   <p style="font-size:11px;color:#666;margin-bottom:14px">Transferencia a una cuenta de inversión o ahorro. Se descuenta del Disponible.</p>
   <div class="fg">
     <div><label class="fl">Fecha</label><input class="fi" id="ap-date" type="date"/></div>
     <div><label class="fl">Monto ($)</label><input class="fi" id="ap-monto" type="number" min="0" step="0.01" placeholder="0.00"/></div>
-    <div><label class="fl">Tipo</label><select class="fs" id="ap-tipo">
+    <div><label class="fl">Tipo</label><select class="fs" id="ap-tipo" onchange="toggleAporteVinculo()">
       <option value="Inversión">💜 Inversión</option>
       <option value="Fondo Seguridad">🟠 Fondo Seguridad</option>
     </select></div>
@@ -398,6 +398,27 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
     </select></div>
     <div class="fgf"><label class="fl">Notas</label><input class="fi" id="ap-notas" placeholder="ej. Aporte mensual XEQT"/></div>
   </div>
+
+  <!-- Vinculación opcional con posición -->
+  <div id="ap-vinculo-wrap" style="background:#00ff8808;border:1px solid #00ff8830;border-radius:5px;padding:12px;margin-top:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span class="slbl" style="color:#00ff88;margin-bottom:0">📊 ¿COMPRASTE UN PRODUCTO? (OPCIONAL)</span>
+      <label style="display:flex;align-items:center;gap:6px;font-size:10px;color:#888;cursor:pointer">
+        <input type="checkbox" id="ap-vincular-chk" onchange="toggleVinculoFields()" style="accent-color:#00ff88">
+        Vincular a posición
+      </label>
+    </div>
+    <p style="font-size:10px;color:#666;margin-bottom:8px;line-height:1.4">Si con este aporte compraste unidades de un producto (ej. XEQT), márcalo. Tu Portafolio se actualizará automáticamente.</p>
+    <div id="ap-vinculo-fields" style="display:none">
+      <div class="fg">
+        <div><label class="fl">Producto</label><select class="fi" id="ap-producto"></select></div>
+        <div><label class="fl">Unidades compradas</label><input class="fi" id="ap-unidades" type="number" min="0" step="0.0001" placeholder="ej. 5.4"/></div>
+        <div class="fgf"><label class="fl">Precio por unidad ($)</label><input class="fi" id="ap-precio" type="number" min="0" step="0.0001" placeholder="ej. 33.20" oninput="calcAporteUnidades()"/></div>
+      </div>
+      <p style="font-size:10px;color:#888;margin-top:6px">💡 Si llenas precio + monto, calculamos las unidades automáticamente.</p>
+    </div>
+  </div>
+
   <div class="ma">
     <button class="btn-cancel" onclick="cm('mo-aporte')">Cancelar</button>
     <button class="btn-ok" onclick="saveAporte()" id="btn-save-ap">Registrar aporte</button>
@@ -2372,14 +2393,35 @@ function renderFireAll(){
   else renderOverview();
 }
 function renderOverview(){
-  // ── Datos: aportes vs valor real (Seguimiento) ──
+  // ── Datos: 3 fuentes de patrimonio con prioridad ──
   const aportadoTotal=fireCapital();              // Suma de aportes Inversión históricos
   const lastPat=lastSegPat();                     // Último valor real registrado en Seguimiento
   const lastMes=lastSegMes();
-  // Si NO hay Seguimiento → usar aportes (comportamiento amigable)
-  // Si HAY Seguimiento → usar último valor registrado
-  const cap=lastPat!==null?lastPat:aportadoTotal;
-  const rendimientoReal=lastPat!==null?(cap-aportadoTotal):0;
+  const portafolioVal=portafolioTotal();          // Suma de valor actual de posiciones
+  const portafolioCosto=portafolioCostoTotal();   // Suma del costo total invertido
+  // Prioridad: Portafolio > Seguimiento > Aportes
+  let cap, fuente;
+  if(portafolioVal>0){
+    cap=portafolioVal;
+    fuente='portafolio';
+  }else if(lastPat!==null){
+    cap=lastPat;
+    fuente='seguimiento';
+  }else{
+    cap=aportadoTotal;
+    fuente='aportes';
+  }
+  // Rendimiento real depende de la fuente
+  let rendimientoReal=0;
+  let rendimientoBase=aportadoTotal;
+  if(fuente==='portafolio'){
+    // Rendimiento desde el portafolio: valor actual − costo total
+    rendimientoReal=portafolioVal-portafolioCosto;
+    rendimientoBase=portafolioCosto;
+  }else if(fuente==='seguimiento'){
+    rendimientoReal=cap-aportadoTotal;
+    rendimientoBase=aportadoTotal;
+  }
   const celiVal=celiCapital();
   const rrspVal=rrspCapital();
   const ytdAportes=fireYTDAportes();
@@ -2391,7 +2433,11 @@ function renderOverview(){
 
   // ── KPIs FILA 1 ──
   $('f-pat').textContent=fmt(cap);
-  if($('f-pat-s'))$('f-pat-s').textContent=lastPat!==null?`📅 Últ. registro ${mkLbl(lastMes)}`:'Suma de aportes';
+  if($('f-pat-s')){
+    if(fuente==='portafolio')$('f-pat-s').textContent=`📊 De portafolio (${posiciones.length} pos.)`;
+    else if(fuente==='seguimiento')$('f-pat-s').textContent=`📅 Últ. seg. ${mkLbl(lastMes)}`;
+    else $('f-pat-s').textContent='Suma de aportes';
+  }
   $('f-meta').textContent=fmtM(meta);
   $('f-meta-s').textContent=`${fmtI(FIRE.gasto)}/mes × ${(FIRE.tasa*100).toFixed(1)}%`;
   $('f-yrs').textContent=Math.max(res.edad-FIRE.edad,0);
@@ -2402,18 +2448,24 @@ function renderOverview(){
   // ── KPIs FILA 2 ──
   $('f-aportado').textContent=fmt(aportadoTotal);
   if($('f-aportado-s'))$('f-aportado-s').textContent=aportadoTotal>0?`${aportes.filter(a=>a.tipo==='Inversión').length} aporte(s) registrado(s)`:'Sin aportes aún';
-  // Rendimiento real (con color)
+  // Rendimiento real
   const rendEl=$('f-rend');
   if(rendEl){
-    rendEl.textContent=lastPat!==null?(rendimientoReal>=0?'+':'')+fmt(rendimientoReal):'—';
-    rendEl.style.color=lastPat===null?'#444':(rendimientoReal>=0?'#00ff88':'#ff4d4d');
+    if(fuente==='aportes'){
+      rendEl.textContent='—';
+      rendEl.style.color='#444';
+    }else{
+      rendEl.textContent=(rendimientoReal>=0?'+':'')+fmt(rendimientoReal);
+      rendEl.style.color=rendimientoReal>=0?'#00ff88':'#ff4d4d';
+    }
   }
   if($('f-rend-s')){
-    if(lastPat===null){
-      $('f-rend-s').textContent='Registra en Seguimiento';
+    if(fuente==='aportes'){
+      $('f-rend-s').textContent='Crea posiciones o registra Seguimiento';
     }else{
-      const rendPct=aportadoTotal>0?(rendimientoReal/aportadoTotal*100).toFixed(1):'0.0';
-      $('f-rend-s').textContent=`${rendPct}% de retorno acum.`;
+      const rendPct=rendimientoBase>0?(rendimientoReal/rendimientoBase*100).toFixed(1):'0.0';
+      const fnLbl=fuente==='portafolio'?'del portafolio':'del Seguimiento';
+      $('f-rend-s').textContent=`${rendPct}% ${fnLbl}`;
     }
   }
   $('f-celi-sp').textContent=fmtI(Math.max(FIRE.celiLimite-celiVal,0));
@@ -2438,11 +2490,17 @@ function renderOverview(){
   $('cd-dt').textContent=cap>=meta?'¡Lo lograste! 🎉':`Edad ${res.edad} — Año ${res.anio}`;
 
   // ── Cards CELI/RRSP ──
-  $('ov-celi').textContent=fmt(celiVal);
+  // Si hay portafolio, usar valor real de posiciones por cuenta; si no, aportes
+  let celiCap=celiVal,rrspCap=rrspVal;
+  if(portafolioVal>0){
+    celiCap=posiciones.filter(p=>p.cuenta==='TFSA/CELI').reduce((s,p)=>s+posValorActual(p),0);
+    rrspCap=posiciones.filter(p=>p.cuenta==='RRSP/REER').reduce((s,p)=>s+posValorActual(p),0);
+  }
+  $('ov-celi').textContent=fmt(celiCap);
   $('ov-celi-sp').textContent='Espacio: '+fmtI(Math.max(FIRE.celiLimite-celiVal,0));
-  $('ov-celi-bar').style.width=Math.min((celiVal/FIRE.celiLimite)*100,100)+'%';
-  $('ov-rrsp').textContent=fmt(rrspVal);
-  $('ov-rrsp-bar').style.width=Math.min((rrspVal/FIRE.rrspLimite)*100,100)+'%';
+  $('ov-celi-bar').style.width=Math.min((celiCap/FIRE.celiLimite)*100,100)+'%';
+  $('ov-rrsp').textContent=fmt(rrspCap);
+  $('ov-rrsp-bar').style.width=Math.min((rrspCap/FIRE.rrspLimite)*100,100)+'%';
 
   // ── Escenarios ──
   const scs=[{idKey:'con',r:0.035,a:1000},{idKey:'base',r:0.05,a:1500},{idKey:'opt',r:0.07,a:2000}];
@@ -2452,10 +2510,27 @@ function renderOverview(){
     if(el)el.textContent=cap>=meta?'¡FIRE!':'Edad '+r.edad;
   });
 
-  // ── ETF Distribution (placeholder) ──
+  // ── Distribución por clase (REAL desde portafolio) ──
   const etfDist=$('etf-dist');
   if(etfDist){
-    etfDist.innerHTML='<div style="color:#444;font-size:10px;padding:8px 0;text-align:center">Próximamente — disponible cuando implementemos Portafolio</div>';
+    const dist=distribucionPorClase();
+    const totDist=Object.values(dist).reduce((s,v)=>s+v,0);
+    if(totDist<=0){
+      etfDist.innerHTML='<div style="color:#444;font-size:10px;padding:14px;text-align:center;line-height:1.5">Sin posiciones en Portafolio<br><span style="font-size:9px">Agrega posiciones en 📊 PORTAFOLIO para ver distribución</span></div>';
+    }else{
+      etfDist.innerHTML=CLASES_ACTIVO.map(cl=>{
+        const v=dist[cl.key]||0;
+        if(v<=0)return '';
+        const p=(v/totDist*100);
+        return `<div style="margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px">
+            <span style="color:${cl.color};font-weight:600">${cl.emoji} ${cl.label}</span>
+            <span style="color:#aaa;font-family:'JetBrains Mono',monospace">${fmt(v)} · ${p.toFixed(1)}%</span>
+          </div>
+          <div class="bg" style="height:5px"><div class="bf" style="width:${p}%;background:${cl.color}"></div></div>
+        </div>`;
+      }).join('');
+    }
   }
 
   // ── Simulador ──
@@ -2948,8 +3023,87 @@ function openAporteModal(){
   $('ap-tipo').value='Inversión';
   $('ap-cuenta').value='TFSA/CELI';
   $('ap-notas').value='';
+  // Reset vinculación
+  $('ap-vincular-chk').checked=false;
+  $('ap-unidades').value='';
+  $('ap-precio').value='';
+  toggleVinculoFields();
+  toggleAporteVinculo();
+  // Cargar productos en dropdown
+  const sel=$('ap-producto');
+  if(sel){
+    sel.innerHTML=productos.map(p=>{
+      const cl=getClase(p.clase);
+      return `<option value="${p.key}">${cl.emoji} ${p.ticker} — ${p.nombre.substring(0,30)}</option>`;
+    }).join('');
+  }
   om('mo-aporte');
   setTimeout(()=>$('ap-monto').focus(),100);
+}
+// Mostrar/ocultar la sección de vinculación según el tipo
+function toggleAporteVinculo(){
+  const tipo=$('ap-tipo').value;
+  const wrap=$('ap-vinculo-wrap');
+  if(!wrap)return;
+  if(tipo==='Inversión'){
+    wrap.style.display='block';
+  }else{
+    wrap.style.display='none';
+    $('ap-vincular-chk').checked=false;
+    toggleVinculoFields();
+  }
+}
+// Mostrar/ocultar campos de producto/unidades/precio según checkbox
+function toggleVinculoFields(){
+  const checked=$('ap-vincular-chk').checked;
+  $('ap-vinculo-fields').style.display=checked?'block':'none';
+}
+// Auto-calcular unidades desde monto / precio
+function calcAporteUnidades(){
+  const monto=parseFloat($('ap-monto').value)||0;
+  const precio=parseFloat($('ap-precio').value)||0;
+  if(monto>0&&precio>0){
+    const u=monto/precio;
+    $('ap-unidades').value=u.toFixed(4).replace(/\.?0+$/,'');
+  }
+}
+// Aplicar vinculación: actualiza/crea posición y agrega historial de precio
+async function aplicarVinculacionAporte(productoKey,cuenta,unidades,precio,monto,fecha){
+  if(!productoKey||!cuenta||unidades<=0)return;
+  const prod=getProducto(productoKey);
+  if(!prod)return;
+  // Buscar posición existente: mismo producto + misma cuenta
+  let pos=posiciones.find(p=>p.productoKey===productoKey&&p.cuenta===cuenta);
+  const costoNuevo=parseFloat(monto)||(unidades*precio);
+  if(pos){
+    // Sumar a existente
+    pos.unidades=(parseFloat(pos.unidades)||0)+unidades;
+    pos.costoTotal=(parseFloat(pos.costoTotal)||0)+costoNuevo;
+    if(precio>0){
+      pos.precioActual=precio;
+      pos.fechaUltimoPrecio=fecha;
+    }
+  }else{
+    // Auto-crear nueva posición
+    pos={
+      key:'pos_'+Date.now(),
+      productoKey,
+      cuenta,
+      unidades,
+      costoTotal:costoNuevo,
+      precioActual:precio||0,
+      fechaUltimoPrecio:precio>0?fecha:''
+    };
+    posiciones.push(pos);
+  }
+  savePosicionesLocal();
+  // Agregar al historial de precios si hay precio
+  if(precio>0){
+    historialPrecios.push({productoKey,fecha,precio});
+    saveHistorialPreciosLocal();
+    await syncHistorialPreciosToSheets();
+  }
+  await syncPosicionesToSheets();
 }
 async function saveAporte(){
   const date=$('ap-date').value;
@@ -2959,13 +3113,34 @@ async function saveAporte(){
   const notas=$('ap-notas').value;
   if(!date||isNaN(monto)||monto<=0){toast('Completa fecha y monto','warn');return}
   const ap={date,tipo,cuenta,monto,notas,id:Date.now()};
+  // Procesar vinculación opcional
+  let vinculoMsg='';
+  if(tipo==='Inversión'&&$('ap-vincular-chk').checked){
+    const productoKey=$('ap-producto').value;
+    const unidades=parseFloat($('ap-unidades').value)||0;
+    const precio=parseFloat($('ap-precio').value)||0;
+    if(productoKey&&unidades>0){
+      // Guardar info de vinculación en el aporte (para referencia)
+      ap.productoKey=productoKey;
+      ap.unidades=unidades;
+      ap.precio=precio;
+      const prod=getProducto(productoKey);
+      vinculoMsg=` · ${unidades.toFixed(2).replace(/\.?0+$/,'')} ${prod?.ticker||'?'} @ ${fmt(precio)}`;
+    }
+  }
   const b=$('btn-save-ap');b.disabled=true;b.textContent='⟳ Guardando...';
   await saveAporteToSheets(ap);
   aportes.push(ap);
   localStorage.setItem('ft_aportes',JSON.stringify(aportes));
+  // Aplicar vinculación si corresponde
+  if(ap.productoKey&&ap.unidades>0){
+    await aplicarVinculacionAporte(ap.productoKey,cuenta,ap.unidades,ap.precio||0,monto,date);
+  }
   b.disabled=false;b.textContent='Registrar aporte';
   cm('mo-aporte');renderAll();
-  toast(`Aporte de ${fmtI(monto)} a ${tipo} ✓`,'ok');
+  if(typeof renderPortafolio==='function')renderPortafolio();
+  if(typeof renderOverview==='function')renderOverview();
+  toast(`Aporte ${fmtI(monto)} a ${tipo}${vinculoMsg} ✓`,'ok');
 }
 async function delAporte(i){
   if(i<0||!aportes[i])return;
