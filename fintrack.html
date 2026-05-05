@@ -302,6 +302,11 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
     </div>
     <button class="btn-tiny" onclick="addProducto()" style="margin-top:8px;border-color:#00ff88;color:#00ff88;padding:5px 10px">+ Agregar producto</button>
   </div>
+  <div style="margin-top:12px;padding-top:12px;border-top:1px solid #1a1a2e">
+    <div class="slbl" style="color:#888;margin-bottom:8px">🧹 MANTENIMIENTO</div>
+    <button class="btn-tiny" onclick="ejecutarLimpiezaHistorial()" style="border-color:#ffaa00;color:#ffaa00;padding:6px 12px;width:100%">🧹 Limpiar duplicados del Historial de Precios</button>
+    <p style="font-size:9px;color:#666;margin-top:6px;line-height:1.4">Si actualizaste el precio de un producto varias veces el mismo día (ej. tests), conserva solo el último valor por (producto + fecha).</p>
+  </div>
   <div class="ma"><button class="btn-cancel" onclick="cm('mo-productos')">Cerrar</button></div>
 </div></div>
 
@@ -1183,6 +1188,38 @@ function loadHistorialPreciosLocal(){
   historialPrecios=sh?JSON.parse(sh):[];
 }
 function saveHistorialPreciosLocal(){localStorage.setItem('ft_historial_precios',JSON.stringify(historialPrecios))}
+
+// Agregar precio al historial dedupeando mismo-día (si ya existe entrada del mismo producto+fecha, la reemplaza)
+function addOrUpdateHistorialPrecio(productoKey,fecha,precio){
+  if(!productoKey||!fecha||!precio)return;
+  const idx=historialPrecios.findIndex(h=>h.productoKey===productoKey&&h.fecha===fecha);
+  if(idx>=0){
+    historialPrecios[idx].precio=precio;
+  }else{
+    historialPrecios.push({productoKey,fecha,precio});
+  }
+  saveHistorialPreciosLocal();
+}
+
+// Limpiar duplicados del historial: para cada (producto+fecha), conservar solo el último valor
+function limpiarHistorialPrecios(){
+  const seen={};
+  // Recorrer en orden inverso para conservar el más reciente
+  const sorted=[...historialPrecios];
+  // Quedarse con el último por (productoKey+fecha)
+  const dedup={};
+  sorted.forEach((h,i)=>{
+    const key=h.productoKey+'|'+h.fecha;
+    dedup[key]={...h,_idx:i};
+  });
+  const clean=Object.values(dedup).map(h=>{const x={productoKey:h.productoKey,fecha:h.fecha,precio:h.precio};return x;});
+  // Ordenar por fecha asc
+  clean.sort((a,b)=>a.fecha>b.fecha?1:-1);
+  const removed=historialPrecios.length-clean.length;
+  historialPrecios=clean;
+  saveHistorialPreciosLocal();
+  return removed;
+}
 
 // Cálculos de portafolio
 function posCostoPromedio(pos){
@@ -2712,6 +2749,17 @@ function addProducto(){
   renderProductosList();
   toast(`${ticker} agregado ✓`,'ok');
 }
+async function ejecutarLimpiezaHistorial(){
+  const total=historialPrecios.length;
+  if(total===0){toast('Historial vacío — nada que limpiar','warn');return}
+  const removed=limpiarHistorialPrecios();
+  if(removed===0){
+    toast('Historial ya está limpio ✓','ok');
+    return;
+  }
+  await syncHistorialPreciosToSheets();
+  toast(`🧹 ${removed} duplicado${removed>1?'s':''} eliminado${removed>1?'s':''} (${total} → ${historialPrecios.length})`,'ok');
+}
 function delProducto(key){
   const p=productos.find(x=>x.key===key);if(!p)return;
   // Verificar si hay posiciones asociadas
@@ -2779,10 +2827,9 @@ async function savePosicion(){
       pos.costoTotal=costo;
       pos.precioActual=precio;
       pos.fechaUltimoPrecio=fecha;
-      // Si el precio cambió, agregar al historial
+      // Si el precio cambió, agregar al historial (con dedup mismo-día)
       if(precioCambio){
-        historialPrecios.push({productoKey,fecha,precio});
-        saveHistorialPreciosLocal();
+        addOrUpdateHistorialPrecio(productoKey,fecha,precio);
         syncHistorialPreciosToSheets();
       }
     }
@@ -2797,8 +2844,7 @@ async function savePosicion(){
     const key='pos_'+Date.now();
     posiciones.push({key,productoKey,cuenta,unidades,costoTotal:costo,precioActual:precio,fechaUltimoPrecio:fecha});
     if(precio>0){
-      historialPrecios.push({productoKey,fecha,precio});
-      saveHistorialPreciosLocal();
+      addOrUpdateHistorialPrecio(productoKey,fecha,precio);
       syncHistorialPreciosToSheets();
     }
   }
@@ -2853,10 +2899,9 @@ async function savePrecio(){
   if(isNaN(precio)||precio<=0){toast('Precio inválido','warn');return}
   pos.precioActual=precio;
   pos.fechaUltimoPrecio=fecha;
-  // Agregar al historial
-  historialPrecios.push({productoKey:pos.productoKey,fecha,precio});
+  // Agregar al historial con dedup mismo-día
+  addOrUpdateHistorialPrecio(pos.productoKey,fecha,precio);
   savePosicionesLocal();
-  saveHistorialPreciosLocal();
   await syncPosicionesToSheets();
   await syncHistorialPreciosToSheets();
   cm('mo-precio');
@@ -3097,10 +3142,9 @@ async function aplicarVinculacionAporte(productoKey,cuenta,unidades,precio,monto
     posiciones.push(pos);
   }
   savePosicionesLocal();
-  // Agregar al historial de precios si hay precio
+  // Agregar al historial de precios si hay precio (con dedup mismo-día)
   if(precio>0){
-    historialPrecios.push({productoKey,fecha,precio});
-    saveHistorialPreciosLocal();
+    addOrUpdateHistorialPrecio(productoKey,fecha,precio);
     await syncHistorialPreciosToSheets();
   }
   await syncPosicionesToSheets();
