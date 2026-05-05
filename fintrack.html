@@ -4935,8 +4935,8 @@ function exportarBackup(){
     productos,
     posiciones,
     historialPrecios,
-    tfsaLimits:TFSA_LIMITS,
-    rrspLimits:RRSP_LIMITS,
+    tfsaLimits:CELI_LIMITES,
+    rrspLimits:RRSP_LIMITES,
     rrspConfig:RRSP_CONFIG,
     rrspHistorial:RRSP_HISTORIAL,
     projConfig:PROJ_CONFIG,
@@ -4978,8 +4978,8 @@ function importarBackup(file){
       if(data.productos){productos=data.productos;localStorage.setItem('ft_productos',JSON.stringify(productos))}
       if(data.posiciones){posiciones=data.posiciones;localStorage.setItem('ft_posiciones',JSON.stringify(posiciones))}
       if(data.historialPrecios){historialPrecios=data.historialPrecios;localStorage.setItem('ft_historial_precios',JSON.stringify(historialPrecios))}
-      if(data.tfsaLimits){TFSA_LIMITS=data.tfsaLimits;localStorage.setItem('ft_tfsa_limits',JSON.stringify(TFSA_LIMITS))}
-      if(data.rrspLimits){RRSP_LIMITS=data.rrspLimits;localStorage.setItem('ft_rrsp_limits',JSON.stringify(RRSP_LIMITS))}
+      if(data.tfsaLimits){CELI_LIMITES=data.tfsaLimits;localStorage.setItem('ft_tfsa_limits',JSON.stringify(CELI_LIMITES))}
+      if(data.rrspLimits){RRSP_LIMITES=data.rrspLimits;localStorage.setItem('ft_rrsp_limits',JSON.stringify(RRSP_LIMITES))}
       if(data.rrspConfig){RRSP_CONFIG=data.rrspConfig;localStorage.setItem('ft_rrsp_config',JSON.stringify(RRSP_CONFIG))}
       if(data.rrspHistorial){RRSP_HISTORIAL=data.rrspHistorial;localStorage.setItem('ft_rrsp_historial',JSON.stringify(RRSP_HISTORIAL))}
       if(data.projConfig){PROJ_CONFIG=data.projConfig;saveProjConfig()}
@@ -5007,10 +5007,10 @@ function triggerImportFile(){
 // 🌅 ONBOARDING — Tour guiado primera vez
 const ONBOARDING_STEPS=[
   {target:'.logo',title:'¡Bienvenido a PHOENIX! 🔥',msg:'Tu sistema personal para alcanzar la libertad financiera. Vamos a darte un tour rápido (1 minuto).'},
-  {target:'.tabs-wrap',title:'Dos pestañas principales',msg:'<strong>FINTRACK:</strong> Registra tus gastos diarios y mantén control del presupuesto.<br><br><strong>FIRE DASHBOARD:</strong> Visualiza tu progreso hacia la libertad financiera.'},
+  {target:'.tab-btn.active',title:'Dos pestañas principales',msg:'<strong>FINTRACK:</strong> Registra tus gastos diarios y mantén control del presupuesto.<br><br><strong>FIRE DASHBOARD:</strong> Visualiza tu progreso hacia la libertad financiera.'},
   {target:'.kpi-row',title:'KPIs en tiempo real',msg:'Cada tarjeta muestra una métrica clave. <strong>Disponible</strong> es tu salario menos gastos. <strong>Aportes</strong> es lo que invertiste este mes.'},
   {target:'#vasijas',title:'Sistema de Vasijas',msg:'Distribuye tu salario en 4 partes: <strong>Vivir (56%)</strong>, <strong>Fondo Seguridad (15%)</strong>, <strong>Inversión (25%)</strong> y <strong>Ocio (4%)</strong>. Te ayuda a no gastar más de lo planeado.'},
-  {target:'#perfil-badge',title:'Tu perfil PHOENIX',msg:'Click aquí para personalizar tu nombre, fecha de inicio FIRE, y configurar tu <strong>Plan de Aporte</strong> (cuánto va a inversión vs fondo seguridad).'},
+  {target:'#fire-day',title:'Tu perfil PHOENIX',msg:'Click en "DÍA X" para personalizar tu nombre, fecha de inicio FIRE, y configurar tu <strong>Plan de Aporte</strong> (cuánto va a inversión vs fondo seguridad).'},
   {target:null,title:'¡Listo para empezar! 🚀',msg:'Registra tu primer gasto, configura tu plan FIRE, y ve creciendo poco a poco. La disciplina diaria construye la libertad de mañana.'}
 ];
 function isFirstTime(){
@@ -5021,7 +5021,9 @@ function markOnboardingDone(){
 }
 function startOnboarding(forced=false){
   if(!forced&&!isFirstTime())return;
-  showOnboardingStep(0);
+  // Cerrar otros modales abiertos antes de iniciar
+  document.querySelectorAll('.mo.show').forEach(m=>m.classList.remove('show'));
+  setTimeout(()=>showOnboardingStep(0),300);
 }
 function showOnboardingStep(idx){
   const step=ONBOARDING_STEPS[idx];
@@ -5029,38 +5031,67 @@ function showOnboardingStep(idx){
     closeOnboarding();
     return;
   }
-  // Crear o reutilizar overlay
+  // Limpiar highlights previos
+  document.querySelectorAll('.onboard-highlight').forEach(el=>{
+    el.classList.remove('onboard-highlight');
+    el.style.removeProperty('box-shadow');
+    el.style.removeProperty('border-radius');
+    el.style.removeProperty('transition');
+    if(el.dataset.onboardSavedZ!==undefined){el.style.zIndex=el.dataset.onboardSavedZ;delete el.dataset.onboardSavedZ}
+    if(el.dataset.onboardSavedPos!==undefined){el.style.position=el.dataset.onboardSavedPos;delete el.dataset.onboardSavedPos}
+  });
+  // Crear o reutilizar overlay (pero con un agujero para el target, usando dos overlays)
   let ov=$('onboard-ov');
   if(!ov){
     ov=document.createElement('div');
     ov.id='onboard-ov';
-    ov.style.cssText='position:fixed;inset:0;background:#0a0a0fdd;z-index:9997;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px)';
     document.body.appendChild(ov);
   }
-  ov.style.display='flex';
+  ov.style.cssText='position:fixed;inset:0;z-index:9997;display:flex;align-items:flex-end;justify-content:center;padding:20px;pointer-events:none';
+  // Crear el fondo oscuro semi-transparente como elemento separado
+  let bg=$('onboard-bg');
+  if(!bg){
+    bg=document.createElement('div');
+    bg.id='onboard-bg';
+    document.body.appendChild(bg);
+  }
+  bg.style.cssText='position:fixed;inset:0;background:#0a0a0fdd;z-index:9996;backdrop-filter:blur(2px);pointer-events:auto';
+  bg.style.display='block';
   // Resaltar target
-  document.querySelectorAll('.onboard-highlight').forEach(el=>{
-    el.classList.remove('onboard-highlight');
-    el.style.position='';
-    el.style.zIndex='';
-    el.style.boxShadow='';
-  });
+  let targetEl=null;
   if(step.target){
-    const el=document.querySelector(step.target);
-    if(el){
-      el.classList.add('onboard-highlight');
-      el.style.position='relative';
-      el.style.zIndex='9999';
-      el.style.boxShadow='0 0 0 4px #00ff8888, 0 0 30px #00ff8866';
-      el.style.borderRadius='8px';
-      el.style.transition='box-shadow 0.3s ease';
-      // Scroll suave al elemento
-      try{el.scrollIntoView({behavior:'smooth',block:'center'})}catch(e){}
+    targetEl=document.querySelector(step.target);
+    if(targetEl){
+      // Guardar valores previos antes de cambiar
+      targetEl.dataset.onboardSavedZ=targetEl.style.zIndex||'';
+      targetEl.dataset.onboardSavedPos=targetEl.style.position||'';
+      targetEl.classList.add('onboard-highlight');
+      // Forzar position relative o sticky para que z-index funcione
+      const computedPos=window.getComputedStyle(targetEl).position;
+      if(computedPos==='static')targetEl.style.position='relative';
+      // Crítico: z-index MAYOR que el bg (9996) para que sobresalga
+      targetEl.style.zIndex='9998';
+      targetEl.style.boxShadow='0 0 0 4px #00ff88, 0 0 30px #00ff8888, 0 0 60px #00ff8855';
+      targetEl.style.borderRadius='8px';
+      targetEl.style.transition='box-shadow 0.3s ease';
+      // Scroll al elemento
+      try{targetEl.scrollIntoView({behavior:'smooth',block:'center'})}catch(e){}
     }
   }
-  // Tarjeta de instrucción
+  // Decidir posición de la tarjeta: arriba o abajo según donde esté el target
+  let cardAlign='center';
+  if(targetEl){
+    try{
+      const rect=targetEl.getBoundingClientRect();
+      const viewH=window.innerHeight;
+      // Si target está en la mitad superior, tarjeta abajo. Si está abajo, tarjeta arriba.
+      cardAlign=rect.top<viewH/2?'flex-end':'flex-start';
+    }catch(e){}
+  }
+  ov.style.alignItems=cardAlign;
+  // Tarjeta de instrucción (clickeable, no bloqueada por el bg)
   ov.innerHTML=`
-    <div style="background:#0d0d14;border:1px solid #00ff88;border-radius:10px;padding:24px;max-width:480px;box-shadow:0 10px 40px #00ff8830">
+    <div style="background:#0d0d14;border:1px solid #00ff88;border-radius:10px;padding:24px;max-width:480px;box-shadow:0 10px 40px #00ff8830;pointer-events:auto;margin:20px">
       <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#444;letter-spacing:2px;margin-bottom:6px">PASO ${idx+1} DE ${ONBOARDING_STEPS.length}</div>
       <div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:#00ff88;margin-bottom:12px">${step.title}</div>
       <div style="font-size:13px;color:#bbb;line-height:1.6;margin-bottom:18px">${step.msg}</div>
@@ -5079,13 +5110,25 @@ function showOnboardingStep(idx){
 }
 function closeOnboarding(){
   const ov=$('onboard-ov');
-  if(ov)ov.style.display='none';
-  // Limpiar highlights
+  if(ov)ov.remove();
+  const bg=$('onboard-bg');
+  if(bg)bg.remove();
+  // Limpiar highlights y restaurar estilos previos
   document.querySelectorAll('.onboard-highlight').forEach(el=>{
     el.classList.remove('onboard-highlight');
-    el.style.position='';
-    el.style.zIndex='';
-    el.style.boxShadow='';
+    el.style.removeProperty('box-shadow');
+    el.style.removeProperty('border-radius');
+    el.style.removeProperty('transition');
+    if(el.dataset.onboardSavedZ!==undefined){
+      if(el.dataset.onboardSavedZ)el.style.zIndex=el.dataset.onboardSavedZ;
+      else el.style.removeProperty('z-index');
+      delete el.dataset.onboardSavedZ;
+    }
+    if(el.dataset.onboardSavedPos!==undefined){
+      if(el.dataset.onboardSavedPos)el.style.position=el.dataset.onboardSavedPos;
+      else el.style.removeProperty('position');
+      delete el.dataset.onboardSavedPos;
+    }
   });
   markOnboardingDone();
 }
