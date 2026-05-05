@@ -384,7 +384,8 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
   </div>
   <div id="precio-historial-wrap" style="margin-top:12px;background:#1a1a2e30;padding:8px;border-radius:5px">
     <div class="slbl" style="color:#888;margin-bottom:6px">📈 HISTORIAL DE PRECIOS</div>
-    <div id="precio-historial" style="max-height:160px;overflow-y:auto"></div>
+    <div id="precio-chart-wrap" style="height:140px;margin-bottom:8px;display:none"><canvas id="precio-mini-chart"></canvas></div>
+    <div id="precio-historial" style="max-height:120px;overflow-y:auto"></div>
   </div>
   <div class="ma">
     <button class="btn-cancel" onclick="cm('mo-precio')">Cancelar</button>
@@ -922,6 +923,72 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
         <div class="cw-xl"><canvas id="fireChart"></canvas></div>
       </div>
     </div>
+    <!-- Velocímetro FIRE + Heatmap -->
+    <div class="g2">
+      <div class="panel">
+        <div class="pt">
+          <span>🎯 Velocímetro FIRE</span>
+          <span style="font-size:9px;color:#444">Aporte real vs. necesario</span>
+        </div>
+        <p style="font-size:10px;color:#666;margin:0 0 12px;line-height:1.4">¿Vas bien? Compara tu aporte mensual real contra lo necesario para llegar a FIRE en la edad objetivo.</p>
+        <div class="slider-row" style="margin-bottom:14px">
+          <span class="sl-lbl">Edad meta FIRE</span>
+          <input type="range" id="velo-edad" min="40" max="70" step="1" value="60" oninput="renderVelocimetro()">
+          <span class="sl-val" id="velo-edad-val">60</span>
+        </div>
+        <div style="display:flex;justify-content:center;align-items:center;padding:10px 0">
+          <svg id="velo-svg" viewBox="0 0 280 180" style="width:100%;max-width:340px;height:auto">
+            <!-- Arco de fondo -->
+            <path d="M 30 150 A 110 110 0 0 1 250 150" fill="none" stroke="#1a1a2e" stroke-width="20" stroke-linecap="round"/>
+            <!-- Sectores de color -->
+            <path d="M 30 150 A 110 110 0 0 1 103 50" fill="none" stroke="#ff4d4d" stroke-width="20" stroke-linecap="round" opacity="0.3"/>
+            <path d="M 103 50 A 110 110 0 0 1 177 50" fill="none" stroke="#ffaa00" stroke-width="20" stroke-linecap="round" opacity="0.3"/>
+            <path d="M 177 50 A 110 110 0 0 1 250 150" fill="none" stroke="#00ff88" stroke-width="20" stroke-linecap="round" opacity="0.3"/>
+            <!-- Aguja (rotada via transform) -->
+            <g id="velo-needle" style="transform-origin:140px 150px;transform:rotate(-90deg);transition:transform 0.8s ease">
+              <line x1="140" y1="150" x2="140" y2="50" stroke="#00ff88" stroke-width="3" stroke-linecap="round"/>
+              <circle cx="140" cy="150" r="8" fill="#00ff88"/>
+              <circle cx="140" cy="150" r="4" fill="#0a0a0f"/>
+            </g>
+            <!-- Etiquetas -->
+            <text x="30" y="170" font-family="JetBrains Mono" font-size="9" fill="#666" text-anchor="middle">ATRASADO</text>
+            <text x="140" y="35" font-family="JetBrains Mono" font-size="9" fill="#666" text-anchor="middle">EN LÍNEA</text>
+            <text x="250" y="170" font-family="JetBrains Mono" font-size="9" fill="#666" text-anchor="middle">ADELANTADO</text>
+          </svg>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+          <div style="background:#0a0a0f;border:1px solid #1a1a2e;border-radius:5px;padding:10px;text-align:center">
+            <div class="slbl">TU APORTE</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:18px;color:#00ff88;font-weight:700;margin-top:4px" id="velo-real">—</div>
+            <div style="font-size:9px;color:#666">por mes</div>
+          </div>
+          <div style="background:#0a0a0f;border:1px solid #1a1a2e;border-radius:5px;padding:10px;text-align:center">
+            <div class="slbl">NECESARIO</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:18px;color:#4d9fff;font-weight:700;margin-top:4px" id="velo-necesario">—</div>
+            <div style="font-size:9px;color:#666">para FIRE @ <span id="velo-edad-show">60</span></div>
+          </div>
+        </div>
+        <p style="font-size:11px;text-align:center;margin-top:10px;color:#888;line-height:1.4" id="velo-msg">Calculando tu velocidad...</p>
+      </div>
+      <div class="panel">
+        <div class="pt">
+          <span>🔥 Heatmap de actividad</span>
+          <span style="font-size:9px;color:#444" id="heat-info">— días</span>
+        </div>
+        <p style="font-size:10px;color:#666;margin:0 0 8px;line-height:1.4">Cada cuadrito = un día. <span style="color:#4d9fff">Azul</span> = registraste gasto. <span style="color:#00ff88">Verde</span> = registraste aporte. <span style="color:#c084fc">Púrpura</span> = ambos. La constancia es la clave del FIRE.</p>
+        <div id="heat-grid" style="display:flex;flex-direction:column;gap:2px;margin-top:8px"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:10px">
+          <span style="color:#666">Sin actividad</span>
+          <div style="display:flex;gap:2px">
+            <div style="width:10px;height:10px;background:#0a0a0f;border:1px solid #1a1a2e;border-radius:2px"></div>
+            <div style="width:10px;height:10px;background:#4d9fff60;border-radius:2px"></div>
+            <div style="width:10px;height:10px;background:#00ff8860;border-radius:2px"></div>
+            <div style="width:10px;height:10px;background:#c084fc;border-radius:2px"></div>
+          </div>
+          <span style="color:#666">Activo</span>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="fire-subpage" id="fp-celi">
@@ -1090,14 +1157,22 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
             <button class="btn-b" onclick="openPosModal()">+ Nueva posición</button>
           </div>
         </div>
-        <div class="txs" style="max-height:420px">
+        <div class="txs" style="max-height:280px">
           <table class="tbl"><thead><tr><th>Producto</th><th>Cuenta</th><th>Clase</th><th style="text-align:right">Unidades</th><th style="text-align:right">Costo prom.</th><th style="text-align:right">Precio actual</th><th style="text-align:right">Valor</th><th style="text-align:right">Rend.</th><th></th></tr></thead>
           <tbody id="pos-body"></tbody></table>
         </div>
+        <div class="divider"></div>
+        <div class="pt">🏆 Rendimiento por posición</div>
+        <p style="font-size:10px;color:#666;margin:0 0 10px;line-height:1.4">Comparativa de ganancia/pérdida real de cada posición. Verde = ganando, rojo = perdiendo.</p>
+        <div id="p-rend-bars" style="margin-top:8px"></div>
       </div>
       <div class="panel">
         <div class="pt">📊 Distribución por clase</div>
         <div id="p-dist-clase" style="margin-top:10px"></div>
+        <div class="divider"></div>
+        <div class="pt">📈 Histórico de precios — todos los productos</div>
+        <p style="font-size:10px;color:#666;margin:0 0 8px;line-height:1.4">Evolución temporal de los precios que has registrado.</p>
+        <div class="cw-lg"><canvas id="p-precio-chart"></canvas></div>
         <div class="divider"></div>
         <div class="slbl">💡 CONSEJOS</div>
         <div style="font-size:10px;color:#666;line-height:1.5;margin-top:6px">
@@ -1220,8 +1295,12 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
         </div>
       </div>
       <div class="panel">
-        <div class="pt">Evolución del patrimonio</div>
+        <div class="pt">📈 Evolución del patrimonio</div>
         <div class="cw-xl"><canvas id="segChart"></canvas></div>
+        <div class="divider"></div>
+        <div class="pt">💎 Aporte vs Interés compuesto</div>
+        <p style="font-size:10px;color:#666;margin:0 0 8px;line-height:1.4">Cuánto de tu patrimonio es dinero aportado por ti (azul) vs ganado por interés compuesto (verde).</p>
+        <div class="cw-lg"><canvas id="segCompChart"></canvas></div>
       </div>
     </div>
   </div>
@@ -3027,6 +3106,129 @@ function renderOverview(){
 
   // ── Simulador ──
   updateSim();
+  // ── Velocímetro y heatmap ──
+  renderVelocimetro();
+  renderHeatmap();
+}
+
+// 🎯 Velocímetro FIRE — aporte real vs necesario
+function renderVelocimetro(){
+  const edadMeta=parseInt($('velo-edad')?.value||60);
+  $('velo-edad-val').textContent=edadMeta;
+  $('velo-edad-show').textContent=edadMeta;
+  // Capital actual
+  const portafolioVal=portafolioTotal();
+  const lastPat=lastSegPat();
+  const aportadoTot=fireCapital();
+  let cap;
+  if(portafolioVal>0)cap=portafolioVal;
+  else if(lastPat!==null)cap=lastPat;
+  else cap=aportadoTot;
+  // Aporte real: 25% del salario
+  const inv=VASIJAS.find(v=>v.key==='inv')||{pct:25};
+  const aporteReal=SAL*inv.pct/100;
+  // Aporte necesario para llegar a meta en (edadMeta - edadActual) años con retorno asumido
+  const meta=FIRE.meta;
+  const yrs=Math.max(edadMeta-FIRE.edad,1);
+  const r=FIRE.retorno;
+  // Fórmula valor futuro de anualidad: VF = P*(1+r)^n + PMT*((1+r)^n - 1)/r
+  // Despejar PMT: PMT = (meta - cap*(1+r)^n) * r / ((1+r)^n - 1)
+  const factor=Math.pow(1+r,yrs);
+  const pmtAnual=Math.max((meta-cap*factor)*r/(factor-1),0);
+  const aporteNecesario=pmtAnual/12;
+  // Ratio para la aguja: 0.5 = en línea, <0.5 atrasado, >0.5 adelantado
+  let ratio=aporteNecesario>0?aporteReal/aporteNecesario:1;
+  ratio=Math.max(0.1,Math.min(ratio,2.0)); // clamp visual
+  // Aguja: ángulo de -90 (izq, atrasado) a +90 (der, adelantado), 0 en línea
+  // Mapeo: ratio 0.5 → 0°, ratio 1.0 → +30°, ratio 2.0 → +90°, ratio 0.1 → -90°
+  let angle;
+  if(ratio<=1){angle=-90+(ratio/1.0)*90;}// -90 a 0
+  else{angle=Math.min((ratio-1)*90,90);}// 0 a +90
+  const needle=$('velo-needle');
+  if(needle)needle.style.transform=`rotate(${angle}deg)`;
+  // Color de aguja según ratio
+  const lineEl=needle?.querySelector('line');
+  const circleEl=needle?.querySelector('circle');
+  const color=ratio<0.7?'#ff4d4d':ratio<1.1?'#ffaa00':'#00ff88';
+  if(lineEl)lineEl.setAttribute('stroke',color);
+  if(circleEl)circleEl.setAttribute('fill',color);
+  // Stats
+  $('velo-real').textContent=fmtI(aporteReal);
+  $('velo-necesario').textContent=fmtI(aporteNecesario);
+  // Mensaje motivacional
+  let msg='';
+  if(aporteNecesario<=0){
+    msg=`🎉 ¡Ya estás cerca! Tu capital se proyecta a ${fmtM(cap*factor)} a los ${edadMeta}.`;
+  }else if(ratio>=1.5){
+    msg=`🚀 Estás adelantado ${(ratio*100-100).toFixed(0)}%. Vas a llegar antes de los ${edadMeta}.`;
+  }else if(ratio>=1.1){
+    msg=`✨ ¡Vas excelente! Aportes ${(ratio*100-100).toFixed(0)}% más de lo necesario.`;
+  }else if(ratio>=0.9){
+    msg=`⚖️ Estás en línea. Mantén la disciplina.`;
+  }else if(ratio>=0.7){
+    msg=`⚠️ Te falta aportar ${fmtI(aporteNecesario-aporteReal)} más al mes para llegar a tiempo.`;
+  }else{
+    msg=`🔴 Necesitas aportar ${fmtI(aporteNecesario-aporteReal)} más/mes o ajustar tu meta de edad.`;
+  }
+  $('velo-msg').textContent=msg;
+}
+
+// 🔥 Heatmap de actividad estilo GitHub
+function renderHeatmap(){
+  const cont=$('heat-grid');
+  if(!cont)return;
+  const yr=new Date().getFullYear();
+  const ini=new Date(yr,0,1);
+  const fin=new Date(yr,11,31);
+  const totalDias=Math.floor((fin-ini)/(1000*60*60*24))+1;
+  // Recolectar actividad por día
+  const actividad={};
+  expenses.forEach(e=>{
+    if(e.date&&e.date.startsWith(String(yr))){
+      if(!actividad[e.date])actividad[e.date]={g:false,a:false};
+      actividad[e.date].g=true;
+    }
+  });
+  aportes.forEach(a=>{
+    if(a.date&&a.date.startsWith(String(yr))){
+      if(!actividad[a.date])actividad[a.date]={g:false,a:false};
+      actividad[a.date].a=true;
+    }
+  });
+  // Construir grid: 7 filas (días semana) × ~53 columnas (semanas)
+  // Empezamos desde el primer domingo antes o igual al 1 enero
+  const startDay=ini.getDay();// 0=domingo
+  const totalCols=Math.ceil((totalDias+startDay)/7);
+  // Renderizar como 7 filas
+  let html='';
+  for(let dow=0;dow<7;dow++){
+    html+='<div style="display:flex;gap:2px">';
+    for(let col=0;col<totalCols;col++){
+      const dayIdx=col*7+dow-startDay;
+      if(dayIdx<0||dayIdx>=totalDias){
+        html+='<div style="width:10px;height:10px"></div>';
+        continue;
+      }
+      const d=new Date(ini);
+      d.setDate(d.getDate()+dayIdx);
+      const fecha=d.toISOString().split('T')[0];
+      const act=actividad[fecha];
+      let bg='#0a0a0f',border='1px solid #1a1a2e';
+      let title=fecha;
+      if(act){
+        if(act.g&&act.a){bg='#c084fc';title+=' · 💜 Gasto + Aporte';}
+        else if(act.a){bg='#00ff88';title+=' · 💚 Aporte';}
+        else if(act.g){bg='#4d9fff';title+=' · 💙 Gasto';}
+        border='none';
+      }
+      html+=`<div style="width:10px;height:10px;background:${bg};border:${border};border-radius:2px" title="${title}"></div>`;
+    }
+    html+='</div>';
+  }
+  cont.innerHTML=html;
+  // Info: días con actividad
+  const diasAct=Object.keys(actividad).length;
+  $('heat-info').textContent=`${diasAct} días activos · ${yr}`;
 }
 function renderCeli(){
   const llegada=parseInt($('celi-llegada').value)||2019;
@@ -3534,9 +3736,108 @@ function renderSeguimiento(){
     return`<tr><td style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#888">${mkLbl(s.mes)}</td><td style="text-align:right;font-family:'JetBrains Mono',monospace;color:#fff">${fmt(pat)}</td><td style="text-align:right;color:#4d9fff">${ap>0?fmtI(ap):'—'}</td><td style="text-align:right;color:${rend>=0?'#00ff88':'#ff4d4d'}">${rend!==0?fmt(rend):'—'}</td><td style="text-align:right;color:${rend>=0?'#00ff88':'#ff4d4d'};font-size:10px">${rendPct}</td><td style="text-align:right;color:#4d9fff">${s.tfsa>0?fmtI(s.tfsa):'—'}</td><td style="text-align:right;color:#c084fc">${s.rrsp>0?fmtI(s.rrsp):'—'}</td><td><button class="xbtn" onclick="delSeg(${realIdx})">×</button></td></tr>`;
   }).join(''):'<tr><td colspan="8" style="color:#1a1a2e;padding:14px 0;font-size:9px;text-align:center">SIN REGISTROS — AGREGA TU PRIMER MES PARA EMPEZAR EL TRACKING</td></tr>';
   if(charts.seg)charts.seg.destroy();
+  if(charts.segComp)charts.segComp.destroy();
   if(!seg.length)return;
   const sorted=[...seg].sort((a,b)=>a.mes>b.mes?1:-1);
-  charts.seg=new Chart($('segChart'),{type:'line',data:{labels:sorted.map(s=>mkLbl(s.mes)),datasets:[{label:'Patrimonio',data:sorted.map(s=>parseFloat(s.pat)||0),borderColor:'#00ff88',backgroundColor:'#00ff8810',fill:true,tension:0.3,pointRadius:5,pointBackgroundColor:'#00ff88',pointBorderColor:'#0a0a0f',pointBorderWidth:2,borderWidth:2.5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${fmt(ctx.raw)}`}}},scales:{x:{ticks:{color:'#666',font:{size:10,family:'JetBrains Mono'}},grid:{color:'#1a1a2e'}},y:{ticks:{color:'#666',font:{size:10,family:'JetBrains Mono'},callback:v=>fmtM(v)},grid:{color:'#1a1a2e'},beginAtZero:false}}}});
+  const labels=sorted.map(s=>mkLbl(s.mes));
+  const dataPat=sorted.map(s=>parseFloat(s.pat)||0);
+  const meta=FIRE.meta;
+  // Detectar hitos para puntos especiales
+  const hitos=[0.10,0.25,0.50,0.75,1.0];
+  const hitosAlc={};
+  let lastPctSeen=0;
+  sorted.forEach((s,i)=>{
+    const pct=meta>0?(parseFloat(s.pat)/meta):0;
+    hitos.forEach(h=>{
+      if(pct>=h&&lastPctSeen<h){
+        hitosAlc[i]=h;
+      }
+    });
+    lastPctSeen=Math.max(lastPctSeen,pct);
+  });
+  const pointBg=sorted.map((_,i)=>hitosAlc[i]?'#ffaa00':'#00ff88');
+  const pointRadius=sorted.map((_,i)=>hitosAlc[i]?7:5);
+  // Línea de meta (solo si tiene sentido visualmente, escala max 30% encima del actual o meta)
+  const maxPat=Math.max(...dataPat);
+  const showMeta=meta<=maxPat*5; // mostrar meta si está dentro de un rango razonable
+  const datasets=[{
+    label:'Patrimonio',
+    data:dataPat,
+    borderColor:'#00ff88',
+    backgroundColor:'#00ff8810',
+    fill:true,tension:0.3,
+    pointRadius:pointRadius,
+    pointBackgroundColor:pointBg,
+    pointBorderColor:'#0a0a0f',
+    pointBorderWidth:2,
+    borderWidth:2.5
+  }];
+  if(showMeta){
+    datasets.push({
+      label:'Meta FIRE',
+      data:Array(labels.length).fill(meta),
+      borderColor:'#ff4d4d',
+      borderDash:[6,3],
+      fill:false,
+      pointRadius:0,
+      borderWidth:1.5
+    });
+  }
+  charts.seg=new Chart($('segChart'),{
+    type:'line',
+    data:{labels,datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:showMeta,labels:{color:'#666',font:{size:9},boxWidth:10}},
+        tooltip:{callbacks:{
+          label:ctx=>{
+            const i=ctx.dataIndex;
+            const h=hitosAlc[i];
+            const lbl=` ${fmt(ctx.raw)}`;
+            return h?`${lbl} · 🎯 ${(h*100).toFixed(0)}% FIRE`:lbl;
+          }
+        }}
+      },
+      scales:{
+        x:{ticks:{color:'#666',font:{size:10,family:'JetBrains Mono'}},grid:{color:'#1a1a2e'}},
+        y:{ticks:{color:'#666',font:{size:10,family:'JetBrains Mono'},callback:v=>fmtM(v)},grid:{color:'#1a1a2e'},beginAtZero:false}
+      }
+    }
+  });
+  // 💎 Chart Aporte vs Interés compuesto (apilado)
+  let aporteAcum=0,rendAcum=0;
+  const dataAporte=[],dataRend=[];
+  sorted.forEach(s=>{
+    aporteAcum+=parseFloat(s.ap)||0;
+    rendAcum+=parseFloat(s.rend)||0;
+    dataAporte.push(Math.round(aporteAcum));
+    dataRend.push(Math.round(rendAcum));
+  });
+  const compCanvas=$('segCompChart');
+  if(compCanvas){
+    charts.segComp=new Chart(compCanvas,{
+      type:'bar',
+      data:{
+        labels,
+        datasets:[
+          {label:'Aporte acumulado',data:dataAporte,backgroundColor:'#4d9fff',borderColor:'#4d9fff',borderWidth:1,stack:'patrimonio'},
+          {label:'Interés acumulado',data:dataRend,backgroundColor:'#00ff88',borderColor:'#00ff88',borderWidth:1,stack:'patrimonio'}
+        ]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{display:true,position:'bottom',labels:{color:'#666',font:{size:9},boxWidth:10,padding:6}},
+          tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${fmt(ctx.raw)}`}}
+        },
+        scales:{
+          x:{stacked:true,ticks:{color:'#666',font:{size:9}},grid:{color:'#1a1a2e'}},
+          y:{stacked:true,ticks:{color:'#666',font:{size:9},callback:v=>fmtM(v)},grid:{color:'#1a1a2e'}}
+        }
+      }
+    });
+  }
 }
 function updateSim(){
   // Si el slider de meta no fue tocado todavía, usar FIRE.meta como default
@@ -3756,6 +4057,27 @@ function openPrecioModal(posKey){
       <span style="color:#00ff88">${fmt(h.precio)}</span>
     </div>`).join(''):'<div style="color:#444;font-size:10px;padding:6px;text-align:center">Sin historial todavía</div>';
   om('mo-precio');
+  // Renderizar mini-chart si hay 2+ entradas
+  setTimeout(()=>renderPrecioMiniChart(pos.productoKey,prod),100);
+}
+function renderPrecioMiniChart(productoKey,prod){
+  if(charts.precioMini)charts.precioMini.destroy();
+  const wrap=$('precio-chart-wrap');
+  if(!wrap)return;
+  const hist=historialPrecios.filter(h=>h.productoKey===productoKey).sort((a,b)=>a.fecha>b.fecha?1:-1);
+  if(hist.length<2){
+    wrap.style.display='none';
+    return;
+  }
+  wrap.style.display='block';
+  const cl=getClase(prod.clase);
+  const labels=hist.map(h=>h.fecha);
+  const data=hist.map(h=>parseFloat(h.precio));
+  charts.precioMini=new Chart($('precio-mini-chart'),{
+    type:'line',
+    data:{labels,datasets:[{label:prod.ticker,data,borderColor:cl.color,backgroundColor:cl.color+'20',fill:true,tension:0.3,pointRadius:3,pointBackgroundColor:cl.color,borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${fmt(ctx.raw)}`}}},scales:{x:{ticks:{color:'#444',font:{size:8},maxTicksLimit:6},grid:{color:'#1a1a2e'}},y:{ticks:{color:'#444',font:{size:8},callback:v=>fmt(v)},grid:{color:'#1a1a2e'}}}}
+  });
 }
 async function savePrecio(){
   if(!updatingPrecioPosKey)return;
@@ -3838,6 +4160,89 @@ function renderPortafolio(){
 
   // Distribución por clase (chart)
   renderDistribucionClase();
+  // Rendimiento por posición (barras horizontales)
+  renderRendBarras();
+  // Histórico de precios global
+  renderHistoricoPreciosGlobal();
+}
+
+// 🏆 Barras horizontales de rendimiento por posición
+function renderRendBarras(){
+  const cont=$('p-rend-bars');
+  if(!cont)return;
+  if(!posiciones.length){
+    cont.innerHTML='<div style="color:#444;font-size:10px;text-align:center;padding:10px 0">Sin posiciones para comparar</div>';
+    return;
+  }
+  // Calcular rendimientos
+  const datos=posiciones.map(pos=>{
+    const prod=getProducto(pos.productoKey);
+    if(!prod)return null;
+    const rend=posRendimiento(pos);
+    const rendPct=posRendimientoPct(pos);
+    return {ticker:prod.ticker,cuenta:pos.cuenta,rend,rendPct,prod};
+  }).filter(d=>d!==null);
+  // Ordenar de mejor a peor
+  datos.sort((a,b)=>b.rendPct-a.rendPct);
+  // Máximo absoluto para escalar barras
+  const maxAbs=Math.max(...datos.map(d=>Math.abs(d.rendPct)),1);
+  cont.innerHTML=datos.map(d=>{
+    const isPos=d.rend>=0;
+    const color=isPos?'#00ff88':'#ff4d4d';
+    const widthPct=Math.min(Math.abs(d.rendPct)/maxAbs*50,50); // 50% para cada lado del centro
+    const offset=isPos?50:50-widthPct;
+    return `<div style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:${color}">${d.ticker}</span>
+        <span style="font-size:9px;color:#666">${d.cuenta}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${color};font-weight:700">${(isPos?'+':'')}${d.rendPct.toFixed(2)}% · ${(isPos?'+':'')}${fmt(d.rend)}</span>
+      </div>
+      <div style="position:relative;height:8px;background:#0a0a0f;border-radius:4px;overflow:hidden">
+        <div style="position:absolute;left:50%;top:0;width:1px;height:100%;background:#1a1a2e;z-index:2"></div>
+        <div style="position:absolute;left:${offset}%;top:0;width:${widthPct}%;height:100%;background:${color};border-radius:4px;transition:width 0.6s ease"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// 📈 Histórico global de precios — todos los productos
+function renderHistoricoPreciosGlobal(){
+  if(charts.precioGlobal)charts.precioGlobal.destroy();
+  const canvas=$('p-precio-chart');
+  if(!canvas)return;
+  if(!historialPrecios.length){
+    const ctx=canvas.getContext('2d');
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    return;
+  }
+  // Agrupar por productoKey
+  const porProd={};
+  historialPrecios.forEach(h=>{
+    if(!porProd[h.productoKey])porProd[h.productoKey]=[];
+    porProd[h.productoKey].push({fecha:h.fecha,precio:parseFloat(h.precio)});
+  });
+  // Solo productos con 1+ entrada
+  const ticks=Object.keys(porProd).filter(k=>porProd[k].length>=1);
+  if(!ticks.length)return;
+  // Ordenar cada serie por fecha
+  ticks.forEach(k=>porProd[k].sort((a,b)=>a.fecha>b.fecha?1:-1));
+  // Recolectar todas las fechas únicas
+  const fechasUnicas=[...new Set(historialPrecios.map(h=>h.fecha))].sort();
+  // Crear datasets
+  const datasets=ticks.map(k=>{
+    const prod=getProducto(k);
+    const cl=prod?getClase(prod.clase):{color:'#888'};
+    const data=fechasUnicas.map(f=>{
+      const entry=porProd[k].find(e=>e.fecha===f);
+      return entry?entry.precio:null;
+    });
+    return {label:prod?prod.ticker:k,data,borderColor:cl.color,backgroundColor:cl.color+'10',fill:false,tension:0.3,pointRadius:3,borderWidth:2,spanGaps:true};
+  });
+  charts.precioGlobal=new Chart(canvas,{
+    type:'line',
+    data:{labels:fechasUnicas,datasets},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:'#666',font:{size:9},boxWidth:10,padding:6}}},scales:{x:{ticks:{color:'#444',font:{size:8},maxTicksLimit:8},grid:{color:'#1a1a2e'}},y:{ticks:{color:'#444',font:{size:8},callback:v=>fmt(v)},grid:{color:'#1a1a2e'}}}}
+  });
 }
 
 // Chart de distribución por clase
