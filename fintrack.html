@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FINTRACK + FIRE PRO — Camilo</title>
+<title>PHOENIX — Tu camino al FIRE</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
@@ -14,7 +14,9 @@ body{background:#0a0a0f;font-family:'Rajdhani',sans-serif;color:#e0e0e0;min-heig
 ::-webkit-scrollbar-thumb{background:#1a1a2e;border-radius:2px}
 
 .nav{background:#0d0d14;border-bottom:1px solid #1a1a2e;display:flex;align-items:center;justify-content:space-between;padding:0 20px;position:sticky;top:0;z-index:100}
-.logo{font-family:'JetBrains Mono',monospace;font-size:12px;color:#00ff88;letter-spacing:4px;padding:13px 16px 13px 0;border-right:1px solid #1a1a2e;margin-right:4px}
+.logo{font-family:'JetBrains Mono',monospace;font-size:12px;color:#00ff88;letter-spacing:4px;padding:13px 16px 13px 0;border-right:1px solid #1a1a2e;margin-right:4px;display:flex;align-items:center;gap:8px}
+.flame-svg{width:18px;height:24px;flex-shrink:0;display:inline-block;vertical-align:middle}
+.flame-svg-lg{width:60px;height:80px;flex-shrink:0;display:inline-block}
 .live-dot{width:6px;height:6px;background:#00ff88;border-radius:50%;display:inline-block;margin-right:7px;animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.2}}
 .tab-btn{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;padding:13px 18px;border:none;background:none;color:#444;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;position:relative;top:1px}
@@ -22,6 +24,14 @@ body{background:#0a0a0f;font-family:'Rajdhani',sans-serif;color:#e0e0e0;min-heig
 .tab-btn:hover:not(.active){color:#777;border-bottom-color:#333}
 .nav-right{display:flex;align-items:center;gap:10px}
 .clock-nav{font-family:'JetBrains Mono',monospace;font-size:9px;color:#333}
+.greeting{font-family:'Rajdhani',sans-serif;font-size:11px;color:#888;font-weight:500;letter-spacing:0.5px}
+.greeting strong{color:#00ff88;font-weight:600}
+.fire-day-widget{font-family:'JetBrains Mono',monospace;font-size:9px;color:#ff8c42;background:#ff8c4210;border:1px solid #ff8c4230;padding:4px 9px;border-radius:4px;display:flex;align-items:center;gap:5px;letter-spacing:0.5px}
+.fire-day-widget .flame-mini{width:11px;height:14px}
+.lphrase{font-family:'Rajdhani',sans-serif;font-size:14px;color:#888;font-style:italic;text-align:center;max-width:480px;margin-top:18px;line-height:1.5;padding:0 20px;font-weight:400}
+.lphrase-author{font-family:'JetBrains Mono',monospace;font-size:9px;color:#444;margin-top:6px;letter-spacing:1px}
+.lgreeting{font-family:'Rajdhani',sans-serif;font-size:18px;color:#ccc;margin-top:20px;font-weight:500}
+.lgreeting strong{color:#00ff88;font-weight:700}
 .salary-badge,.config-badge{font-family:'JetBrains Mono',monospace;font-size:10px;color:#00ff88;background:#00ff8812;border:1px solid #00ff8830;padding:4px 10px;border-radius:4px;cursor:pointer;transition:all 0.2s}
 .salary-badge:hover,.config-badge:hover{background:#00ff8825}
 .config-badge{color:#c084fc;background:#c084fc12;border-color:#c084fc30}
@@ -281,9 +291,38 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
 <body>
 
 <div class="lov" id="lov">
-  <div class="llogo"><span class="live-dot"></span>FINTRACK + FIRE PRO</div>
-  <div class="lbar"><div class="lbf" id="lbf"></div></div>
+  <svg class="flame-svg-lg" viewBox="0 0 30 40" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="flame-grad-lg" x1="0%" y1="100%" x2="0%" y2="0%">
+        <stop offset="0%" stop-color="#ffaa00"/>
+        <stop offset="50%" stop-color="#ff6b3d"/>
+        <stop offset="100%" stop-color="#ffee55" stop-opacity="0.8"/>
+      </linearGradient>
+      <radialGradient id="flame-glow-lg" cx="50%" cy="60%" r="50%">
+        <stop offset="0%" stop-color="#ff6b3d" stop-opacity="0.6"/>
+        <stop offset="100%" stop-color="#ff6b3d" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <ellipse cx="15" cy="36" rx="6" ry="2" fill="url(#flame-glow-lg)">
+      <animate attributeName="rx" values="5;8;5" dur="2s" repeatCount="indefinite"/>
+    </ellipse>
+    <path d="M 15 35 Q 8 28 9 20 Q 10 14 15 8 Q 18 14 19 18 Q 22 14 22 20 Q 21 28 15 35 Z" fill="url(#flame-grad-lg)">
+      <animate attributeName="d"
+        values="M 15 35 Q 8 28 9 20 Q 10 14 15 8 Q 18 14 19 18 Q 22 14 22 20 Q 21 28 15 35 Z;
+                M 15 35 Q 7 29 8 19 Q 11 13 15 5 Q 17 13 19 17 Q 23 14 22 21 Q 23 29 15 35 Z;
+                M 15 35 Q 8 28 9 20 Q 10 14 15 8 Q 18 14 19 18 Q 22 14 22 20 Q 21 28 15 35 Z"
+        dur="2.2s" repeatCount="indefinite"/>
+    </path>
+    <path d="M 15 30 Q 12 25 13 20 Q 14 16 15 13 Q 17 17 17 22 Q 17 27 15 30 Z" fill="#ffee55" opacity="0.85">
+      <animate attributeName="opacity" values="0.6;1;0.6" dur="1.5s" repeatCount="indefinite"/>
+    </path>
+  </svg>
+  <div class="llogo" style="margin-top:14px"><span class="live-dot"></span>PHOENIX</div>
+  <div class="lgreeting" id="lgreeting">Bienvenido</div>
+  <div class="lbar" style="margin-top:24px"><div class="lbf" id="lbf"></div></div>
   <div class="lmsg" id="lmsg">CONECTANDO CON GOOGLE SHEETS...</div>
+  <div class="lphrase" id="lphrase">—</div>
+  <div class="lphrase-author" id="lphrase-author"></div>
 </div>
 
 <!-- MODALS -->
@@ -350,6 +389,25 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
   <div class="ma">
     <button class="btn-cancel" onclick="cm('mo-precio')">Cancelar</button>
     <button class="btn-ok" onclick="savePrecio()">Guardar precio</button>
+  </div>
+</div></div>
+
+<!-- Modal: Mi PHOENIX (perfil personal) -->
+<div class="mo" id="mo-perfil"><div class="md" style="max-width:520px">
+  <div class="mt2">🔥 Mi PHOENIX</div>
+  <p style="font-size:11px;color:#666;margin-bottom:14px">Personaliza tu experiencia. Estos datos se guardan localmente y en Sheets.</p>
+  <div class="fg">
+    <div class="fgf"><label class="fl">Tu nombre / apodo</label><input class="fi" id="perfil-nombre" placeholder="Ing. Camilo Velasquez"/></div>
+    <div class="fgf"><label class="fl">Fecha de inicio de tu camino FIRE</label><input class="fi" id="perfil-fecha" type="date"/></div>
+    <div class="fgf"><label class="fl">Tu frase personal (opcional — reemplaza la del día)</label><input class="fi" id="perfil-frase" placeholder="ej. Cada día más cerca de la libertad"/></div>
+  </div>
+  <p style="font-size:10px;color:#666;margin-top:10px;line-height:1.4">💡 Si dejas la frase vacía, la app rota automáticamente entre +150 frases motivacionales (fe, finanzas, disciplina, sabiduría) cada día.</p>
+  <div style="background:#ff8c4208;border:1px solid #ff8c4220;border-radius:5px;padding:10px;margin-top:12px">
+    <p style="font-size:10px;color:#ff8c42;margin:0;line-height:1.5">📊 <strong>¿Quieres agregar tus propias frases?</strong> Crea una hoja "Frases" en tu Google Sheet con columnas <code>frase</code> y <code>autor</code>. La app las cargará automáticamente.</p>
+  </div>
+  <div class="ma">
+    <button class="btn-cancel" onclick="cm('mo-perfil')">Cancelar</button>
+    <button class="btn-ok" onclick="savePerfil()">Guardar</button>
   </div>
 </div></div>
 
@@ -589,11 +647,37 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
 <!-- NAV -->
 <nav class="nav">
   <div style="display:flex;align-items:center">
-    <div class="logo"><span class="live-dot"></span>FINTRACK + FIRE</div>
+    <div class="logo">
+      <svg class="flame-svg" viewBox="0 0 30 40" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="flame-grad-nav" x1="0%" y1="100%" x2="0%" y2="0%">
+            <stop offset="0%" stop-color="#ffaa00"/>
+            <stop offset="50%" stop-color="#ff6b3d"/>
+            <stop offset="100%" stop-color="#ffee55" stop-opacity="0.8"/>
+          </linearGradient>
+        </defs>
+        <path d="M 15 35 Q 8 28 9 20 Q 10 14 15 8 Q 18 14 19 18 Q 22 14 22 20 Q 21 28 15 35 Z" fill="url(#flame-grad-nav)">
+          <animate attributeName="d"
+            values="M 15 35 Q 8 28 9 20 Q 10 14 15 8 Q 18 14 19 18 Q 22 14 22 20 Q 21 28 15 35 Z;
+                    M 15 35 Q 7 29 8 19 Q 11 13 15 5 Q 17 13 19 17 Q 23 14 22 21 Q 23 29 15 35 Z;
+                    M 15 35 Q 8 28 9 20 Q 10 14 15 8 Q 18 14 19 18 Q 22 14 22 20 Q 21 28 15 35 Z"
+            dur="2.2s" repeatCount="indefinite"/>
+        </path>
+        <path d="M 15 30 Q 12 25 13 20 Q 14 16 15 13 Q 17 17 17 22 Q 17 27 15 30 Z" fill="#ffee55" opacity="0.85">
+          <animate attributeName="opacity" values="0.6;1;0.6" dur="1.5s" repeatCount="indefinite"/>
+        </path>
+      </svg>
+      <span>PHOENIX</span>
+    </div>
     <button class="tab-btn active" onclick="switchTab('ft',this)">💳 FINTRACK</button>
     <button class="tab-btn" onclick="switchTab('fire',this)">🔥 FIRE DASHBOARD</button>
   </div>
   <div class="nav-right">
+    <div class="greeting" id="greeting" onclick="openPerfilModal()" style="cursor:pointer" title="Click para personalizar">—</div>
+    <div class="fire-day-widget" id="fire-day" title="Días en tu camino al FIRE">
+      <svg class="flame-mini" viewBox="0 0 30 40"><path d="M 15 35 Q 8 28 9 20 Q 10 14 15 8 Q 18 14 19 18 Q 22 14 22 20 Q 21 28 15 35 Z" fill="#ff8c42"/></svg>
+      <span id="fire-day-num">DÍA 1</span>
+    </div>
     <div class="clock-nav" id="clk">—</div>
     <div class="config-badge" onclick="om('mo-mgr');renderMgrTable()" title="Gestionar categorías">⚙ CATEGORÍAS</div>
     <div class="salary-badge" onclick="om('mo-salary')" title="Editar salario">✎ <span id="sal-disp">$4,940</span>/MES</div>
@@ -1094,6 +1178,190 @@ function getSalaryForRange(fromDate,toDate){
 })();
 SAL=getCurrentSalary();
 const FIRE={edad:33,meta:2100000,gasto:7000,tasa:0.04,capital:982.10,celiLimite:51500,rrspLimite:21420,retorno:0.07,aporte:2000,llegada:2019};
+
+// ══════════════════════════════════════════
+// CONFIGURACIÓN DE USUARIO (PHOENIX)
+// ══════════════════════════════════════════
+const USER_DEFAULT={
+  nombre:'Ing. Camilo Velasquez',
+  fechaInicioFire:'2026-05-01',
+  frasePersonalizada:''
+};
+let USER=JSON.parse(JSON.stringify(USER_DEFAULT));
+function loadUser(){
+  const s=localStorage.getItem('ft_user');
+  if(s){try{USER={...USER_DEFAULT,...JSON.parse(s)}}catch(e){}}
+}
+function saveUser(){localStorage.setItem('ft_user',JSON.stringify(USER))}
+
+// Frases motivacionales — 150 curadas (fe + finanzas + disciplina + tiempo + sabiduría)
+// Si el usuario agrega una hoja "Frases" en Sheets con columna 'frase' y 'autor', se cargan también
+const FRASES_BASE=[
+  // ═══ Fe y Dios (30) ═══
+  {f:'Encomienda al Señor tus obras, y tus pensamientos serán afirmados.',a:'Proverbios 16:3'},
+  {f:'Todo lo puedo en Cristo que me fortalece.',a:'Filipenses 4:13'},
+  {f:'Confía en el Señor con todo tu corazón, y no te apoyes en tu propia prudencia.',a:'Proverbios 3:5'},
+  {f:'El que es fiel en lo poco, también es fiel en lo mucho.',a:'Lucas 16:10'},
+  {f:'Mejor es lo poco con justicia, que la muchedumbre de frutos sin derecho.',a:'Proverbios 16:8'},
+  {f:'Las riquezas de vanidad disminuirán, pero el que recoge con mano laboriosa las aumenta.',a:'Proverbios 13:11'},
+  {f:'Bienaventurado el hombre que halla la sabiduría, y que obtiene la inteligencia.',a:'Proverbios 3:13'},
+  {f:'No te afanes por hacerte rico; sé prudente y desiste.',a:'Proverbios 23:4'},
+  {f:'El plan bien pensado del diligente ciertamente tiende a la abundancia.',a:'Proverbios 21:5'},
+  {f:'¿Qué aprovechará al hombre si ganare todo el mundo, y perdiere su alma?',a:'Mateo 16:26'},
+  {f:'Donde está vuestro tesoro, allí estará también vuestro corazón.',a:'Mateo 6:21'},
+  {f:'No os hagáis tesoros en la tierra, sino tesoros en el cielo.',a:'Mateo 6:19'},
+  {f:'Pedid, y se os dará; buscad, y hallaréis; llamad, y se os abrirá.',a:'Mateo 7:7'},
+  {f:'El que ama el dinero, no se saciará de dinero; ni el que ama el mucho tener.',a:'Eclesiastés 5:10'},
+  {f:'Más bienaventurado es dar que recibir.',a:'Hechos 20:35'},
+  {f:'Dios es nuestro amparo y fortaleza, nuestro pronto auxilio en las tribulaciones.',a:'Salmos 46:1'},
+  {f:'El Señor es mi pastor; nada me faltará.',a:'Salmos 23:1'},
+  {f:'Esfuérzate y sé valiente; no temas, ni desmayes, porque Jehová tu Dios estará contigo.',a:'Josué 1:9'},
+  {f:'Las cosas viejas pasaron; he aquí todas son hechas nuevas.',a:'2 Corintios 5:17'},
+  {f:'No se conforme a este siglo, sino transfórmate por la renovación de vuestro entendimiento.',a:'Romanos 12:2'},
+  {f:'Pon en manos del Señor todas tus obras y tus proyectos se cumplirán.',a:'Proverbios 16:3'},
+  {f:'Buscad primeramente el reino de Dios y su justicia, y todas estas cosas os serán añadidas.',a:'Mateo 6:33'},
+  {f:'Para Dios todo es posible.',a:'Mateo 19:26'},
+  {f:'La fe es la certeza de lo que se espera, la convicción de lo que no se ve.',a:'Hebreos 11:1'},
+  {f:'Sé fiel hasta la muerte, y yo te daré la corona de la vida.',a:'Apocalipsis 2:10'},
+  {f:'Hijo mío, no menosprecies la disciplina del Señor.',a:'Proverbios 3:11'},
+  {f:'Más vale poco con temor de Jehová, que gran tesoro donde hay turbación.',a:'Proverbios 15:16'},
+  {f:'El sembrar engaño cosechará viento.',a:'Proverbios 22:8'},
+  {f:'No te jactes del día de mañana, porque no sabes qué dará de sí el día.',a:'Proverbios 27:1'},
+  {f:'Honra a Jehová con tus bienes, y con las primicias de todos tus frutos.',a:'Proverbios 3:9'},
+  // ═══ Finanzas e inversión (35) ═══
+  {f:'No ahorres lo que queda después de gastar; gasta lo que queda después de ahorrar.',a:'Warren Buffett'},
+  {f:'La regla número 1: nunca pierdas dinero. La regla número 2: nunca olvides la regla número 1.',a:'Warren Buffett'},
+  {f:'Sé temeroso cuando otros sean codiciosos, y codicioso cuando otros tengan miedo.',a:'Warren Buffett'},
+  {f:'El interés compuesto es la octava maravilla del mundo.',a:'Albert Einstein'},
+  {f:'No es cuánto haces, sino cuánto guardas, cómo lo haces trabajar para ti, y por cuántas generaciones lo conservas.',a:'Robert Kiyosaki'},
+  {f:'El precio es lo que pagas. El valor es lo que recibes.',a:'Warren Buffett'},
+  {f:'Compra tiempo, no cosas.',a:'Mr. Money Mustache'},
+  {f:'La libertad financiera es libertad de tiempo.',a:'Naval Ravikant'},
+  {f:'El mercado es un mecanismo para transferir dinero del impaciente al paciente.',a:'Warren Buffett'},
+  {f:'No mires las fluctuaciones diarias; mira el panorama de 20 años.',a:'John Bogle'},
+  {f:'No busques la aguja en el pajar. Solo compra el pajar.',a:'John Bogle'},
+  {f:'El tiempo en el mercado le gana al timing del mercado.',a:'Peter Lynch'},
+  {f:'Conoce lo que tienes y por qué lo tienes.',a:'Peter Lynch'},
+  {f:'La paciencia es la virtud más subestimada en las inversiones.',a:'Charlie Munger'},
+  {f:'La gran cantidad de dinero no se hace en comprar y vender, sino en esperar.',a:'Charlie Munger'},
+  {f:'El secreto de la riqueza es vivir por debajo de tus posibilidades.',a:'Thomas J. Stanley'},
+  {f:'Tu mejor inversión eres tú mismo.',a:'Warren Buffett'},
+  {f:'No es lo que ganas, sino lo que ahorras lo que te hace rico.',a:'Anónimo'},
+  {f:'Ahorrar es la diferencia entre el control y el caos financiero.',a:'Dave Ramsey'},
+  {f:'El presupuesto es decirle a tu dinero a dónde ir, en vez de preguntarte a dónde se fue.',a:'John C. Maxwell'},
+  {f:'Vive como nadie hoy, para vivir como nadie mañana.',a:'Dave Ramsey'},
+  {f:'Si quieres ser rico, piensa en ahorrar tanto como en ganar.',a:'Benjamin Franklin'},
+  {f:'Un centavo ahorrado es un centavo ganado.',a:'Benjamin Franklin'},
+  {f:'La inversión más rentable es la inversión en uno mismo.',a:'Warren Buffett'},
+  {f:'No pongas todos tus huevos en una sola canasta.',a:'Refrán financiero'},
+  {f:'El dinero es una herramienta, no un fin.',a:'Anónimo'},
+  {f:'La libertad financiera no es tener mucho dinero, es tener opciones.',a:'Anónimo'},
+  {f:'Quien gasta menos de lo que gana, posee la piedra filosofal.',a:'Benjamin Franklin'},
+  {f:'El dinero a menudo cuesta demasiado.',a:'Ralph Waldo Emerson'},
+  {f:'Riqueza es la habilidad de experimentar plenamente la vida.',a:'Henry David Thoreau'},
+  {f:'Si compras cosas que no necesitas, pronto venderás las que sí necesitas.',a:'Warren Buffett'},
+  {f:'Una inversión en conocimiento paga el mejor interés.',a:'Benjamin Franklin'},
+  {f:'No me preocupa el rendimiento de mi dinero; me preocupa el retorno de mi dinero.',a:'Mark Twain'},
+  {f:'Es mejor ser dueño de algo grande que estar empleado por algo grande.',a:'Naval Ravikant'},
+  {f:'El que hereda se acomoda; el que crea, prospera.',a:'Anónimo'},
+  // ═══ Disciplina y constancia (30) ═══
+  {f:'La disciplina es elegir entre lo que quieres ahora y lo que quieres más.',a:'Abraham Lincoln'},
+  {f:'No fracasamos por falta de talento, fracasamos por falta de disciplina.',a:'Jim Rohn'},
+  {f:'La constancia vence lo que la dicha no alcanza.',a:'Refrán'},
+  {f:'El éxito es la suma de pequeños esfuerzos repetidos día tras día.',a:'Robert Collier'},
+  {f:'Pequeñas mejoras diarias conducen a resultados extraordinarios.',a:'James Clear'},
+  {f:'La calidad de tu vida está determinada por la calidad de tus hábitos.',a:'Aristóteles'},
+  {f:'Eres lo que repites cada día. La excelencia no es un acto, sino un hábito.',a:'Aristóteles'},
+  {f:'No cuentes los días, haz que los días cuenten.',a:'Muhammad Ali'},
+  {f:'La motivación te lleva a empezar. El hábito te mantiene en movimiento.',a:'Jim Rohn'},
+  {f:'Lo que se hace fácil de hacer, también se hace fácil de no hacer.',a:'Jim Rohn'},
+  {f:'No esperes a estar motivado. Empieza, y la motivación llegará.',a:'Anónimo'},
+  {f:'La disciplina es el puente entre las metas y los logros.',a:'Jim Rohn'},
+  {f:'Hoy es un buen día para empezar.',a:'Anónimo'},
+  {f:'Un viaje de mil millas comienza con un solo paso.',a:'Lao Tse'},
+  {f:'No importa cuán despacio vayas, mientras no te detengas.',a:'Confucio'},
+  {f:'La perseverancia es fracasar 19 veces y triunfar la vigésima.',a:'Julie Andrews'},
+  {f:'No esperes oportunidades; créalas.',a:'George Bernard Shaw'},
+  {f:'Cae siete veces, levántate ocho.',a:'Proverbio japonés'},
+  {f:'El éxito es ir de fracaso en fracaso sin perder el entusiasmo.',a:'Winston Churchill'},
+  {f:'No es la fuerza, sino la perseverancia, lo que hace grandes a los hombres.',a:'Samuel Johnson'},
+  {f:'La disciplina pesa onzas, el arrepentimiento pesa toneladas.',a:'Jim Rohn'},
+  {f:'La excelencia no es un destino; es un viaje continuo que nunca termina.',a:'Brian Tracy'},
+  {f:'Hay dos dolores en la vida: el dolor de la disciplina y el del arrepentimiento.',a:'Jim Rohn'},
+  {f:'Quien no añade nada, retrocede.',a:'Hillel'},
+  {f:'La gente exitosa hace lo que la gente sin éxito no está dispuesta a hacer.',a:'Jeff Olson'},
+  {f:'Los pequeños hábitos componen el destino.',a:'James Clear'},
+  {f:'Si quieres mejorar, conténtate con que te tengan por necio o tonto.',a:'Epicteto'},
+  {f:'No es la montaña la que conquistas, sino a ti mismo.',a:'Edmund Hillary'},
+  {f:'La libertad cuesta disciplina.',a:'Anónimo'},
+  {f:'Mejor un paso al día que ningún paso jamás.',a:'Anónimo'},
+  // ═══ Tiempo y paciencia (25) ═══
+  {f:'El mejor momento para plantar un árbol fue hace 20 años. El segundo mejor momento es ahora.',a:'Proverbio chino'},
+  {f:'El tiempo es el activo más valioso que tienes.',a:'Naval Ravikant'},
+  {f:'La paciencia es amarga, pero su fruto es dulce.',a:'Aristóteles'},
+  {f:'Roma no se construyó en un día.',a:'Refrán'},
+  {f:'No se trata de tener tiempo, se trata de hacer tiempo.',a:'Anónimo'},
+  {f:'El que tiene paciencia, tendrá lo que desea.',a:'Benjamin Franklin'},
+  {f:'Todo llega a tiempo para quien sabe esperar.',a:'Proverbio'},
+  {f:'La paciencia no es la habilidad de esperar, sino la habilidad de mantener una buena actitud mientras esperas.',a:'Joyce Meyer'},
+  {f:'Las cosas grandes en la vida toman tiempo.',a:'Anónimo'},
+  {f:'No subestimes el poder del tiempo.',a:'Anónimo'},
+  {f:'Si pierdes 1% diario, en un año habrás perdido casi todo. Si ganas 1% diario, en un año serás 37 veces mejor.',a:'James Clear'},
+  {f:'El tiempo más eficiente para empezar fue ayer; el segundo más eficiente es hoy.',a:'Anónimo'},
+  {f:'No esperes el momento perfecto. Toma el momento y hazlo perfecto.',a:'Anónimo'},
+  {f:'Las decisiones lentas crean problemas rápidos.',a:'Naval Ravikant'},
+  {f:'La paciencia y el tiempo logran más que la fuerza.',a:'Jean de La Fontaine'},
+  {f:'El tiempo descubre la verdad.',a:'Séneca'},
+  {f:'Mientras esperas, prepárate.',a:'Tim Fargo'},
+  {f:'No se hace cumbre en un solo paso, se asciende escalón por escalón.',a:'Friedrich Nietzsche'},
+  {f:'Lo lento y constante gana la carrera.',a:'Esopo'},
+  {f:'El interés compuesto requiere algo aburrido pero poderoso: tiempo.',a:'Morgan Housel'},
+  {f:'Lo más importante en finanzas es el horizonte temporal.',a:'Morgan Housel'},
+  {f:'La riqueza es lo que no ves: los autos no comprados, las vacaciones no tomadas.',a:'Morgan Housel'},
+  {f:'Hacerse rico no es lo mismo que mantenerse rico. Lo primero requiere optimismo; lo segundo, paranoia.',a:'Morgan Housel'},
+  {f:'La paciencia es la verdadera ventaja competitiva en mercados modernos.',a:'Anónimo'},
+  {f:'Cuando dudes, no actúes. El tiempo es tu amigo.',a:'Anónimo'},
+  // ═══ Sabiduría general y propósito (30) ═══
+  {f:'Sé el cambio que deseas ver en el mundo.',a:'Mahatma Gandhi'},
+  {f:'La vida no es lo que te pasa, sino lo que tú haces con lo que te pasa.',a:'Aldous Huxley'},
+  {f:'La única manera de hacer un gran trabajo es amar lo que haces.',a:'Steve Jobs'},
+  {f:'Tus acciones de hoy son las semillas de tu cosecha de mañana.',a:'Anónimo'},
+  {f:'No eres lo que has logrado, eres lo que has superado.',a:'Anónimo'},
+  {f:'No tengas miedo de fracasar. Ten miedo de no intentarlo.',a:'Roy T. Bennett'},
+  {f:'Cuanto más das, más recibes.',a:'Refrán'},
+  {f:'Tu tiempo es limitado. No lo desperdicies viviendo la vida de alguien más.',a:'Steve Jobs'},
+  {f:'El éxito no es la clave de la felicidad. La felicidad es la clave del éxito.',a:'Albert Schweitzer'},
+  {f:'La mente que se abre a una nueva idea jamás vuelve a su tamaño original.',a:'Albert Einstein'},
+  {f:'El presente es el regalo más valioso.',a:'Eleanor Roosevelt'},
+  {f:'Conviértete en la persona que tu yo de 10 años atrás admiraría.',a:'Anónimo'},
+  {f:'Las pequeñas decisiones diarias son las que construyen tu futuro.',a:'Anónimo'},
+  {f:'No dejes para mañana lo que puedas hacer hoy.',a:'Benjamin Franklin'},
+  {f:'Cada día es una nueva oportunidad para mejorar.',a:'Anónimo'},
+  {f:'La salud y la energía son tus inversiones más rentables.',a:'Anónimo'},
+  {f:'La sabiduría es saber qué hacer en seguida; la virtud es hacerlo.',a:'David Starr Jordan'},
+  {f:'No esperes a que venga el momento perfecto. Crea el momento perfecto.',a:'Anónimo'},
+  {f:'La gratitud convierte lo que tenemos en suficiente.',a:'Aesop'},
+  {f:'Sé tú mismo; todos los demás ya están ocupados.',a:'Oscar Wilde'},
+  {f:'La vida es como una caja de chocolates; nunca sabes lo que te va a tocar.',a:'Forrest Gump'},
+  {f:'Si quieres caminar rápido, camina solo. Si quieres llegar lejos, camina acompañado.',a:'Proverbio africano'},
+  {f:'No se trata de los días que vives, sino de la vida que haces de tus días.',a:'Anónimo'},
+  {f:'La mejor preparación para mañana es hacer hoy lo mejor posible.',a:'H. Jackson Brown'},
+  {f:'No dejes que lo que no puedes hacer interfiera con lo que sí puedes hacer.',a:'John Wooden'},
+  {f:'El futuro pertenece a quienes creen en la belleza de sus sueños.',a:'Eleanor Roosevelt'},
+  {f:'Donde hay voluntad, hay un camino.',a:'Refrán'},
+  {f:'Tu energía es tu tarjeta de presentación.',a:'Anónimo'},
+  {f:'Convierte tus heridas en sabiduría.',a:'Oprah Winfrey'},
+  {f:'Construye tu propio sueño, o alguien te contratará para construir el suyo.',a:'Tony Gaskins'}
+];
+let FRASES_USER=[];// Frases adicionales del usuario (vienen de Sheets)
+function getAllFrases(){return [...FRASES_BASE,...FRASES_USER]}
+function getFraseDelDia(){
+  const all=getAllFrases();
+  if(!all.length)return {f:'Tu camino al FIRE empieza hoy.',a:'PHOENIX'};
+  // Determinístico por día: misma frase durante todo el día
+  const seed=Math.floor(Date.now()/(1000*60*60*24));
+  return all[seed%all.length];
+}
 // Cargar meta FIRE persistida
 (function loadFireMeta(){
   const m=parseFloat(localStorage.getItem('ft_fire_meta')||'');
@@ -1575,6 +1843,20 @@ async function loadSheets(){
         precio:parseFloat(h.precio||h.Precio)||0
       })).filter(h=>h.productoKey&&h.fecha);
       saveHistorialPreciosLocal();
+    }
+    // Frases motivacionales del usuario (hoja opcional)
+    if(j.frases && Array.isArray(j.frases)){
+      FRASES_USER=j.frases.map(f=>({
+        f:f.frase||f.Frase||f.f||'',
+        a:f.autor||f.Autor||f.a||'Anónimo'
+      })).filter(x=>x.f);
+    }
+    // Configuración del usuario (si está en Sheets)
+    if(j.userConfig && typeof j.userConfig==='object'){
+      if(j.userConfig.nombre)USER.nombre=j.userConfig.nombre;
+      if(j.userConfig.fechaInicioFire)USER.fechaInicioFire=j.userConfig.fechaInicioFire;
+      if(j.userConfig.frasePersonalizada!==undefined)USER.frasePersonalizada=j.userConfig.frasePersonalizada;
+      saveUser();
     }
     setSS('ok');
   }catch(e){setSS('err')}
@@ -3218,14 +3500,74 @@ function toast(msg,type){
   const t=$('toast');t.textContent=msg;t.className=`toast ${type==='ok'?'tok':type==='warn'?'twarn':'terr'} show`;
   setTimeout(()=>t.classList.remove('show'),3200);
 }
-function updateClock(){$('clk').textContent=new Date().toLocaleString('es-CA',{weekday:'short',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'}).toUpperCase()}
+function openPerfilModal(){
+  $('perfil-nombre').value=USER.nombre||'';
+  $('perfil-fecha').value=USER.fechaInicioFire||'2026-05-01';
+  $('perfil-frase').value=USER.frasePersonalizada||'';
+  om('mo-perfil');
+}
+async function savePerfil(){
+  const nombre=$('perfil-nombre').value.trim();
+  const fecha=$('perfil-fecha').value;
+  const frase=$('perfil-frase').value.trim();
+  if(!nombre){toast('Ingresa tu nombre','warn');return}
+  USER.nombre=nombre;
+  USER.fechaInicioFire=fecha||'2026-05-01';
+  USER.frasePersonalizada=frase;
+  saveUser();
+  // Sync a Sheets
+  try{
+    await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({_action:'saveUserConfig',userConfig:USER})});
+  }catch(e){}
+  cm('mo-perfil');
+  updateClock();// refrescar saludo y días
+  toast(`Perfil actualizado, ${USER.nombre.split(' ').pop()} ✓`,'ok');
+}
+function getSaludoDelMomento(){
+  const h=new Date().getHours();
+  if(h<6)return 'Buenas noches';
+  if(h<12)return 'Buenos días';
+  if(h<19)return 'Buenas tardes';
+  return 'Buenas noches';
+}
+function getDiasFire(){
+  if(!USER.fechaInicioFire)return 1;
+  const inicio=new Date(USER.fechaInicioFire+'T00:00:00');
+  const hoy=new Date();
+  const diff=Math.floor((hoy-inicio)/(1000*60*60*24));
+  return Math.max(diff+1,1);
+}
+function updateClock(){
+  $('clk').textContent=new Date().toLocaleString('es-CA',{weekday:'short',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'}).toUpperCase();
+  // Saludo dinámico
+  const greetingEl=$('greeting');
+  if(greetingEl){
+    const saludo=getSaludoDelMomento();
+    greetingEl.innerHTML=`${saludo}, <strong>${USER.nombre}</strong>`;
+  }
+  // Días FIRE
+  const dayEl=$('fire-day-num');
+  if(dayEl){
+    const d=getDiasFire();
+    dayEl.textContent=`DÍA ${d.toLocaleString('es-CA')}`;
+  }
+}
 
 // INIT
 async function init(){
+  loadUser();
   loadCatsAndVasijas();
   loadProductosLocal();
   loadPosicionesLocal();
   loadHistorialPreciosLocal();
+  // Mostrar saludo y frase en la pantalla de carga
+  const lgreetingEl=$('lgreeting');
+  if(lgreetingEl){
+    lgreetingEl.innerHTML=`${getSaludoDelMomento()}, <strong>${USER.nombre}</strong>`;
+  }
+  const frase=USER.frasePersonalizada?{f:USER.frasePersonalizada,a:'Tu frase'}:getFraseDelDia();
+  if($('lphrase'))$('lphrase').textContent=`"${frase.f}"`;
+  if($('lphrase-author'))$('lphrase-author').textContent=`— ${frase.a}`;
   $('f-date').value=today();$('iv-d').value=today();
   curMonth=curMK();updateClock();setInterval(updateClock,30000);
   buildSel();
@@ -3240,6 +3582,12 @@ async function init(){
     setTimeout(()=>toast(`Limpieza: ${removed} duplicado${removed>1?'s':''} eliminado${removed>1?'s':''}`,'warn'),1000);
   }
   migrateCatsVigencia();// migrar categorías sin 'desde'
+  // Re-actualizar saludo y frase con datos del usuario cargados de Sheets
+  if($('lgreeting'))$('lgreeting').innerHTML=`${getSaludoDelMomento()}, <strong>${USER.nombre}</strong>`;
+  const fraseFinal=USER.frasePersonalizada?{f:USER.frasePersonalizada,a:'Tu frase'}:getFraseDelDia();
+  if($('lphrase'))$('lphrase').textContent=`"${fraseFinal.f}"`;
+  if($('lphrase-author'))$('lphrase-author').textContent=`— ${fraseFinal.a}`;
+  updateClock();// refresh nombre/dias en navbar
   buildSel();
   lb.style.width='100%';lm.textContent='LISTO';
   await new Promise(r=>setTimeout(r,400));
