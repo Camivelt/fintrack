@@ -394,7 +394,7 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
 </div></div>
 
 <!-- Modal: Mi PHOENIX (perfil personal) -->
-<div class="mo" id="mo-perfil"><div class="md" style="max-width:520px">
+<div class="mo" id="mo-perfil"><div class="md" style="max-width:560px">
   <div class="mt2">🔥 Mi PHOENIX</div>
   <p style="font-size:11px;color:#666;margin-bottom:14px">Personaliza tu experiencia. Estos datos se guardan localmente y en Sheets.</p>
   <div class="fg">
@@ -403,6 +403,20 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
     <div class="fgf"><label class="fl">Tu frase personal (opcional — reemplaza la del día)</label><input class="fi" id="perfil-frase" placeholder="ej. Cada día más cerca de la libertad"/></div>
   </div>
   <p style="font-size:10px;color:#666;margin-top:10px;line-height:1.4">💡 Si dejas la frase vacía, la app rota automáticamente entre +150 frases motivacionales (fe, finanzas, disciplina, sabiduría) cada día.</p>
+
+  <!-- Plan de aporte FIRE inteligente -->
+  <div style="margin-top:14px;padding-top:14px;border-top:1px solid #1a1a2e">
+    <div class="slbl" style="color:#00ff88;margin-bottom:8px">🔥 PLAN DE APORTE FIRE</div>
+    <p style="font-size:10px;color:#666;margin-bottom:10px;line-height:1.4">Define cuánto aportas cada mes. La app distribuye automáticamente entre Inversión y Fondo de Seguridad. Cuando el fondo llegue a su meta, todo va a Inversión.</p>
+    <div class="fg">
+      <div><label class="fl">Aporte mensual TOTAL ($)</label><input class="fi" id="perfil-ap-total" type="number" min="0" step="50"/></div>
+      <div><label class="fl">Meta fondo seguridad ($)</label><input class="fi" id="perfil-fondo-meta" type="number" min="0" step="500"/></div>
+      <div><label class="fl">Inversión FIRE / mes (Fase A)</label><input class="fi" id="perfil-ap-fire" type="number" min="0" step="50" oninput="autoCalcAporteFondo()"/></div>
+      <div><label class="fl">Fondo seguridad / mes (Fase A)</label><input class="fi" id="perfil-ap-fondo" type="number" min="0" step="50"/></div>
+    </div>
+    <div id="perfil-fase-info" style="margin-top:10px;padding:8px;border-radius:4px;font-size:11px"></div>
+  </div>
+
   <div style="background:#ff8c4208;border:1px solid #ff8c4220;border-radius:5px;padding:10px;margin-top:12px">
     <p style="font-size:10px;color:#ff8c42;margin:0;line-height:1.5">📊 <strong>¿Quieres agregar tus propias frases?</strong> Crea una hoja "Frases" en tu Google Sheet con columnas <code>frase</code> y <code>autor</code>. La app las cargará automáticamente.</p>
   </div>
@@ -900,7 +914,7 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
           <div class="sc-card" style="--c:#00ff88" onclick="setScenario('optimista',this)" id="sc-opt"><div class="sc-name">🚀 OPTIMISTA</div><div class="sc-age" id="sca-opt">—</div><div class="sc-det">7% · $2,000/mes</div></div>
         </div>
         <div class="divider"></div>
-        <div class="slbl">ETF DISTRIBUTION</div>
+        <div class="slbl">📊 DISTRIBUCIÓN POR CLASE</div>
         <div id="etf-dist"></div>
       </div>
     </div>
@@ -930,11 +944,16 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
           <span>🎯 Velocímetro FIRE</span>
           <span style="font-size:9px;color:#444">Aporte real vs. necesario</span>
         </div>
-        <p style="font-size:10px;color:#666;margin:0 0 12px;line-height:1.4">¿Vas bien? Compara tu aporte mensual real contra lo necesario para llegar a FIRE en la edad objetivo.</p>
-        <div class="slider-row" style="margin-bottom:14px">
+        <p style="font-size:10px;color:#666;margin:0 0 12px;line-height:1.4">¿Vas bien? Compara tu aporte mensual real contra lo necesario para llegar a FIRE en la edad objetivo. Mueve los sliders para simular escenarios.</p>
+        <div class="slider-row" style="margin-bottom:8px">
           <span class="sl-lbl">Edad meta FIRE</span>
           <input type="range" id="velo-edad" min="40" max="70" step="1" value="60" oninput="renderVelocimetro()">
           <span class="sl-val" id="velo-edad-val">60</span>
+        </div>
+        <div class="slider-row" style="margin-bottom:14px">
+          <span class="sl-lbl">Tu aporte mensual ($)</span>
+          <input type="range" id="velo-aporte" min="0" max="5000" step="50" value="1235" oninput="this.dataset.userTouched=1;renderVelocimetro()">
+          <span class="sl-val" id="velo-aporte-val">$1,235</span>
         </div>
         <div style="display:flex;justify-content:center;align-items:center;padding:10px 0">
           <svg id="velo-svg" viewBox="0 0 280 180" style="width:100%;max-width:340px;height:auto">
@@ -1204,7 +1223,7 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
         <div>
           <div class="slider-row" style="margin-bottom:10px">
             <span class="sl-lbl">Aporte mensual</span>
-            <input type="range" id="proj-ap" min="0" max="5000" step="50" value="1235" oninput="onProjConfigChange()">
+            <input type="range" id="proj-ap" min="0" max="5000" step="50" value="1235" oninput="this.dataset.userTouched=1;onProjConfigChange()">
             <span class="sl-val" id="proj-ap-val">$1,235</span>
           </div>
           <div class="slider-row" style="margin-bottom:10px">
@@ -1624,6 +1643,47 @@ function loadProjConfig(){
   else PROJ_CONFIG={...PROJ_CONFIG_DEFAULT};
 }
 function saveProjConfig(){localStorage.setItem('ft_proj_config',JSON.stringify(PROJ_CONFIG))}
+
+// 🔥 APORTE FIRE INTELIGENTE - Plan de aportes con auto-trigger
+// Fase A: fondo seguridad < meta → distribuir entre FIRE y fondo
+// Fase B: fondo lleno → todo a FIRE
+const APORTE_FIRE_DEFAULT={
+  aporteTotalMes: 1976,     // Total que aporta cada mes (configurable)
+  aporteFireFaseA: 1235,    // Mientras fondo no está lleno: a inversión FIRE
+  aporteFondoFaseA: 741,    // Mientras fondo no está lleno: a fondo seguridad
+  fondoMeta: 25000,         // Meta fondo seguridad ($25K recomendado)
+};
+let APORTE_FIRE={};
+function loadAporteFire(){
+  const s=localStorage.getItem('ft_aporte_fire');
+  if(s){try{APORTE_FIRE={...APORTE_FIRE_DEFAULT,...JSON.parse(s)}}catch(e){APORTE_FIRE={...APORTE_FIRE_DEFAULT}}}
+  else APORTE_FIRE={...APORTE_FIRE_DEFAULT};
+}
+function saveAporteFire(){localStorage.setItem('ft_aporte_fire',JSON.stringify(APORTE_FIRE))}
+// Helper: calcular fondo seguridad actual
+function fondoSeguridadActual(){
+  return aportes.filter(a=>a.tipo==='Fondo Seguridad').reduce((s,a)=>s+parseFloat(a.monto),0);
+}
+// Helper: aporte FIRE real según fase actual
+function aporteFireReal(){
+  const fondoActual=fondoSeguridadActual();
+  if(fondoActual>=APORTE_FIRE.fondoMeta){
+    // Fase B: todo a FIRE
+    return APORTE_FIRE.aporteTotalMes;
+  }
+  // Fase A: solo la parte de inversión
+  return APORTE_FIRE.aporteFireFaseA;
+}
+// Helper: aporte fondo real según fase actual
+function aporteFondoReal(){
+  const fondoActual=fondoSeguridadActual();
+  if(fondoActual>=APORTE_FIRE.fondoMeta)return 0;
+  return APORTE_FIRE.aporteFondoFaseA;
+}
+// Helper: ¿qué fase estamos?
+function fasePlanFire(){
+  return fondoSeguridadActual()>=APORTE_FIRE.fondoMeta?'B':'A';
+}
 
 // Categorías base (semilla la primera vez)
 const SEED_CATS=[
@@ -2105,9 +2165,15 @@ async function loadSheets(){
     }
     // Configuración del usuario (si está en Sheets)
     if(j.userConfig && typeof j.userConfig==='object'){
-      if(j.userConfig.nombre)USER.nombre=j.userConfig.nombre;
-      if(j.userConfig.fechaInicioFire)USER.fechaInicioFire=j.userConfig.fechaInicioFire;
-      if(j.userConfig.frasePersonalizada!==undefined)USER.frasePersonalizada=j.userConfig.frasePersonalizada;
+      if(j.userConfig.nombre)USER.nombre=String(j.userConfig.nombre);
+      if(j.userConfig.fechaInicioFire){
+        let f=j.userConfig.fechaInicioFire;
+        if(f instanceof Date)f=f.toISOString().split('T')[0];
+        else if(typeof f==='string'&&f.includes('T'))f=f.split('T')[0];
+        else f=String(f);
+        if(/^\d{4}-\d{2}-\d{2}$/.test(f))USER.fechaInicioFire=f;
+      }
+      if(j.userConfig.frasePersonalizada!==undefined)USER.frasePersonalizada=String(j.userConfig.frasePersonalizada||'');
       saveUser();
     }
     setSS('ok');
@@ -2734,11 +2800,15 @@ function renderKPIs(ts,t,apTotal,apInv,apSeg){
   const ingreso=sr.total;
   apTotal=apTotal||0;apInv=apInv||0;apSeg=apSeg||0;
 
-  // KPI 1: Disponible (descuenta gastos + aportes)
-  const disp=Math.max(ingreso-ts-apTotal,0);
+  // KPI 1: Disponible (descuenta gastos + aportes REALES + aportes PLANEADOS faltantes)
+  // Plan = lo que vas a aportar/mes según APORTE_FIRE; restamos del salario para mostrar disponible real para gastos
+  const apPlanFire=APORTE_FIRE.aporteTotalMes||0;
+  // Si ya aportaste real, restar lo MAYOR entre aporte real y plan
+  const apDescontar=Math.max(apTotal,apPlanFire);
+  const disp=Math.max(ingreso-ts-apDescontar,0);
   const dispPct=ingreso>0?(disp/ingreso)*100:0;
   $('k-disp').textContent=fmt(disp);
-  $('k-disp-sub').innerHTML=`<span style="color:${subColor(100-dispPct,'expense')}">${dispPct.toFixed(0)}% restante</span> · de ${fmtI(ingreso)}`;
+  $('k-disp-sub').innerHTML=`<span style="color:${subColor(100-dispPct,'expense')}">${dispPct.toFixed(0)}% restante</span> · de ${fmtI(ingreso)} (- aportes ${fmtI(apDescontar)})`;
   $('k-disp-bar').style.width=dispPct.toFixed(1)+'%';
   $('k-disp-bar').style.background=barColor(100-dispPct,'expense');
 
@@ -2749,21 +2819,26 @@ function renderKPIs(ts,t,apTotal,apInv,apSeg){
   $('k-gast-bar').style.width=Math.min(gPct,100).toFixed(1)+'%';
   $('k-gast-bar').style.background=barColor(gPct,'expense');
 
-  // KPI 3: Inversión (META cumplida con aportes reales)
-  const invPlan=ingreso*inv.pct/100;
-  const invPct=invPlan>0?(apInv/invPlan)*100:0;
+  // KPI 3: Inversión (META = plan FIRE Fase actual)
+  const invPlanFire=aporteFireReal();
+  const invPct=invPlanFire>0?(apInv/invPlanFire)*100:0;
   $('k-inv').textContent=fmt(apInv);
-  $('k-inv-lbl').textContent=`Inversión ${inv.pct}%`;
-  $('k-inv-sub').innerHTML=`Meta ${fmtI(invPlan)} · <span style="color:${subColor(invPct,'goal')}">${invPct.toFixed(0)}% cumplido</span>`;
+  const fase=fasePlanFire();
+  $('k-inv-lbl').textContent=`Inversión FIRE${fase==='B'?' (Fase B)':''}`;
+  $('k-inv-sub').innerHTML=`Meta ${fmtI(invPlanFire)} · <span style="color:${subColor(invPct,'goal')}">${invPct.toFixed(0)}% cumplido</span>`;
   $('k-inv-bar').style.width=Math.min(invPct,100).toFixed(1)+'%';
   $('k-inv-bar').style.background=barColor(invPct,'goal');
 
-  // KPI 4: Fondo Seguridad (META cumplida con aportes reales)
-  const segPlan=ingreso*seg.pct/100;
-  const segPct=segPlan>0?(apSeg/segPlan)*100:0;
+  // KPI 4: Fondo Seguridad (META = plan FIRE Fase actual)
+  const segPlanFire=aporteFondoReal();
+  const segPct=segPlanFire>0?(apSeg/segPlanFire)*100:0;
   $('k-seg').textContent=fmt(apSeg);
-  $('k-seg-lbl').textContent=`Fondo Seguridad ${seg.pct}%`;
-  $('k-seg-sub').innerHTML=`Meta ${fmtI(segPlan)} · <span style="color:${subColor(segPct,'goal')}">${segPct.toFixed(0)}% cumplido</span>`;
+  $('k-seg-lbl').textContent=`Fondo Seguridad${fase==='B'?' ✓ Lleno':''}`;
+  if(segPlanFire>0){
+    $('k-seg-sub').innerHTML=`Meta ${fmtI(segPlanFire)} · <span style="color:${subColor(segPct,'goal')}">${segPct.toFixed(0)}% cumplido</span>`;
+  }else{
+    $('k-seg-sub').innerHTML=`<span style="color:#00ff88">🎉 Fondo lleno · todo va a Inversión</span>`;
+  }
   $('k-seg-bar').style.width=Math.min(segPct,100).toFixed(1)+'%';
   $('k-seg-bar').style.background=barColor(segPct,'goal');
 
@@ -2795,8 +2870,8 @@ function renderKPIs(ts,t,apTotal,apInv,apSeg){
   $('k-tot-bar').style.width=Math.min(totPct,100).toFixed(1)+'%';
   $('k-tot-bar').style.background=barColor(totPct,'expense');
 
-  // KPI 8: Aportes (Inversión + Fondo Seguridad)
-  const apPlan=ingreso*(inv.pct+seg.pct)/100;
+  // KPI 8: Aportes (Inversión + Fondo Seguridad) — usa plan FIRE total
+  const apPlan=APORTE_FIRE.aporteTotalMes||(ingreso*(inv.pct+seg.pct)/100);
   const apPct=apPlan>0?(apTotal/apPlan)*100:0;
   $('k-ap').textContent=fmt(apTotal);
   $('k-ap-sub').innerHTML=`Meta ${fmtI(apPlan)} · <span style="color:${subColor(apPct,'goal')}">${apPct.toFixed(0)}% cumplido</span>`;
@@ -2999,7 +3074,8 @@ function renderOverview(){
   const meta=FIRE.meta;
   const pct=meta>0?(cap/meta)*100:0;
   const inv=VASIJAS.find(v=>v.key==='inv')||{pct:25};
-  const aporteMensualMeta=SAL*inv.pct/100;
+  // Usar aporte FIRE real del plan (con auto-trigger Fase A/B)
+  const aporteMensualMeta=aporteFireReal();
   const res=calcFire(cap,aporteMensualMeta,FIRE.retorno,meta,FIRE.edad);
 
   // ── KPIs FILA 1 ──
@@ -3014,7 +3090,8 @@ function renderOverview(){
   $('f-yrs').textContent=Math.max(res.edad-FIRE.edad,0);
   $('f-yrs-s').textContent=cap>=meta?'🔥 ¡FIRE alcanzado!':`Edad ${res.edad} — ${res.anio}`;
   $('f-ap').textContent=fmtI(aporteMensualMeta);
-  if($('f-ap-s'))$('f-ap-s').textContent=`${inv.pct}% del salario`;
+  const fasePlan=fasePlanFire();
+  if($('f-ap-s'))$('f-ap-s').textContent=fasePlan==='B'?`🎉 Fondo lleno · todo a FIRE`:`Plan Fase A · fondo en construcción`;
 
   // ── KPIs FILA 2 ──
   $('f-aportado').textContent=fmt(aportadoTotal);
@@ -3124,9 +3201,20 @@ function renderVelocimetro(){
   if(portafolioVal>0)cap=portafolioVal;
   else if(lastPat!==null)cap=lastPat;
   else cap=aportadoTot;
-  // Aporte real: 25% del salario
-  const inv=VASIJAS.find(v=>v.key==='inv')||{pct:25};
-  const aporteReal=SAL*inv.pct/100;
+  // Aporte real: del plan FIRE (con auto-trigger Fase A/B)
+  const aporteFromPlan=aporteFireReal();
+  // Si el slider de aporte tiene un valor diferente al del plan, usar el slider
+  // Si nunca lo movió (dataset.userTouched undefined), usar el del plan
+  const sliderAp=$('velo-aporte');
+  let aporteReal;
+  if(sliderAp&&sliderAp.dataset.userTouched){
+    aporteReal=parseFloat(sliderAp.value)||aporteFromPlan;
+  }else{
+    aporteReal=aporteFromPlan;
+    if(sliderAp){sliderAp.value=aporteFromPlan;}
+  }
+  // Sincronizar label del slider con el valor mostrado
+  if($('velo-aporte-val'))$('velo-aporte-val').textContent=fmtI(aporteReal);
   // Aporte necesario para llegar a meta en (edadMeta - edadActual) años con retorno asumido
   const meta=FIRE.meta;
   const yrs=Math.max(edadMeta-FIRE.edad,1);
@@ -3155,20 +3243,22 @@ function renderVelocimetro(){
   // Stats
   $('velo-real').textContent=fmtI(aporteReal);
   $('velo-necesario').textContent=fmtI(aporteNecesario);
-  // Mensaje motivacional
+  // Mensaje motivacional + indicador de fase
+  const fase=fasePlanFire();
+  const faseTxt=fase==='A'?` · Fase A`:` · 🎉 Fase B`;
   let msg='';
   if(aporteNecesario<=0){
-    msg=`🎉 ¡Ya estás cerca! Tu capital se proyecta a ${fmtM(cap*factor)} a los ${edadMeta}.`;
+    msg=`🎉 ¡Ya estás cerca! Tu capital se proyecta a ${fmtM(cap*factor)} a los ${edadMeta}.${faseTxt}`;
   }else if(ratio>=1.5){
-    msg=`🚀 Estás adelantado ${(ratio*100-100).toFixed(0)}%. Vas a llegar antes de los ${edadMeta}.`;
+    msg=`🚀 Estás adelantado ${(ratio*100-100).toFixed(0)}%. Vas a llegar antes de los ${edadMeta}.${faseTxt}`;
   }else if(ratio>=1.1){
-    msg=`✨ ¡Vas excelente! Aportes ${(ratio*100-100).toFixed(0)}% más de lo necesario.`;
+    msg=`✨ ¡Vas excelente! Aportes ${(ratio*100-100).toFixed(0)}% más de lo necesario.${faseTxt}`;
   }else if(ratio>=0.9){
-    msg=`⚖️ Estás en línea. Mantén la disciplina.`;
+    msg=`⚖️ Estás en línea. Mantén la disciplina.${faseTxt}`;
   }else if(ratio>=0.7){
-    msg=`⚠️ Te falta aportar ${fmtI(aporteNecesario-aporteReal)} más al mes para llegar a tiempo.`;
+    msg=`⚠️ Te falta aportar ${fmtI(aporteNecesario-aporteReal)} más al mes para llegar a tiempo.${faseTxt}`;
   }else{
-    msg=`🔴 Necesitas aportar ${fmtI(aporteNecesario-aporteReal)} más/mes o ajustar tu meta de edad.`;
+    msg=`🔴 Necesitas aportar ${fmtI(aporteNecesario-aporteReal)} más/mes o ajustar tu meta de edad.${faseTxt}`;
   }
   $('velo-msg').textContent=msg;
 }
@@ -3177,58 +3267,73 @@ function renderVelocimetro(){
 function renderHeatmap(){
   const cont=$('heat-grid');
   if(!cont)return;
-  const yr=new Date().getFullYear();
-  const ini=new Date(yr,0,1);
-  const fin=new Date(yr,11,31);
+  // Periodo: desde fechaInicioFire hasta hoy
+  let fechaIni=USER.fechaInicioFire||'2026-05-01';
+  if(fechaIni instanceof Date)fechaIni=fechaIni.toISOString().split('T')[0];
+  if(typeof fechaIni==='string'&&fechaIni.includes('T'))fechaIni=fechaIni.split('T')[0];
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(fechaIni))fechaIni='2026-05-01';
+  const ini=new Date(fechaIni+'T00:00:00');
+  const fin=new Date();fin.setHours(0,0,0,0);
   const totalDias=Math.floor((fin-ini)/(1000*60*60*24))+1;
-  // Recolectar actividad por día
+  // Si el periodo es muy corto (< 7 días), expandir un poco para mostrar contexto
+  const totalDiasShow=Math.max(totalDias,28);
+  // Recolectar actividad por día (solo dentro del rango)
   const actividad={};
+  const iniStr=ini.toISOString().split('T')[0];
+  const finStr=fin.toISOString().split('T')[0];
   expenses.forEach(e=>{
-    if(e.date&&e.date.startsWith(String(yr))){
+    if(e.date&&e.date>=iniStr&&e.date<=finStr){
       if(!actividad[e.date])actividad[e.date]={g:false,a:false};
       actividad[e.date].g=true;
     }
   });
   aportes.forEach(a=>{
-    if(a.date&&a.date.startsWith(String(yr))){
+    if(a.date&&a.date>=iniStr&&a.date<=finStr){
       if(!actividad[a.date])actividad[a.date]={g:false,a:false};
       actividad[a.date].a=true;
     }
   });
-  // Construir grid: 7 filas (días semana) × ~53 columnas (semanas)
-  // Empezamos desde el primer domingo antes o igual al 1 enero
+  // Construir grid: 7 filas (días semana) × N columnas (semanas)
   const startDay=ini.getDay();// 0=domingo
-  const totalCols=Math.ceil((totalDias+startDay)/7);
+  const totalCols=Math.ceil((totalDiasShow+startDay)/7);
+  // Si quedan muchas columnas (más de 60), achicar cuadritos
+  const cellSize=totalCols>60?6:totalCols>40?8:10;
   // Renderizar como 7 filas
   let html='';
   for(let dow=0;dow<7;dow++){
     html+='<div style="display:flex;gap:2px">';
     for(let col=0;col<totalCols;col++){
       const dayIdx=col*7+dow-startDay;
-      if(dayIdx<0||dayIdx>=totalDias){
-        html+='<div style="width:10px;height:10px"></div>';
+      if(dayIdx<0||dayIdx>=totalDiasShow){
+        html+=`<div style="width:${cellSize}px;height:${cellSize}px"></div>`;
         continue;
       }
       const d=new Date(ini);
       d.setDate(d.getDate()+dayIdx);
       const fecha=d.toISOString().split('T')[0];
+      const isFuture=d>fin;
+      const isBeforeStart=d<ini;
       const act=actividad[fecha];
       let bg='#0a0a0f',border='1px solid #1a1a2e';
       let title=fecha;
-      if(act){
+      if(isFuture){
+        bg='transparent';border='1px dashed #1a1a2e';
+        title+=' · futuro';
+      }else if(act){
         if(act.g&&act.a){bg='#c084fc';title+=' · 💜 Gasto + Aporte';}
         else if(act.a){bg='#00ff88';title+=' · 💚 Aporte';}
         else if(act.g){bg='#4d9fff';title+=' · 💙 Gasto';}
         border='none';
       }
-      html+=`<div style="width:10px;height:10px;background:${bg};border:${border};border-radius:2px" title="${title}"></div>`;
+      html+=`<div style="width:${cellSize}px;height:${cellSize}px;background:${bg};border:${border};border-radius:2px" title="${title}"></div>`;
     }
     html+='</div>';
   }
   cont.innerHTML=html;
   // Info: días con actividad
   const diasAct=Object.keys(actividad).length;
-  $('heat-info').textContent=`${diasAct} días activos · ${yr}`;
+  const lblIni=ini.toLocaleDateString('es-CA',{month:'short',day:'2-digit',year:'numeric'});
+  $('heat-info').textContent=`${diasAct} días activos · desde ${lblIni}`;
 }
 function renderCeli(){
   const llegada=parseInt($('celi-llegada').value)||2019;
@@ -3496,7 +3601,7 @@ function updateRRSPSim(){
   const apEfectivo=Math.min(ap,espacioDisp);
   const tax=apEfectivo*tasa;
   $('rr-tax').textContent=fmtI(tax);
-  $('rr-tax-s').textContent=ap>espacioDisp?'⚠️ Excede espacio':'Si aportas el plan';
+  $('rr-tax-s').textContent=ap===0?'Aporta para ver tu ahorro fiscal':ap>espacioDisp?'⚠️ Excede espacio':'Si aportas el plan';
   // Ahorro acumulado por aportes históricos × tasa
   const aportesRrsp=aportes.filter(a=>a.cuenta==='RRSP/REER'&&a.tipo==='Inversión');
   const ahorroAcum=aportesRrsp.reduce((s,a)=>s+parseFloat(a.monto),0)*tasa;
@@ -3529,9 +3634,9 @@ function renderRecomendador(){
   const aportadoCeli=aportesCeli.reduce((s,a)=>s+parseFloat(a.monto),0);
   const limiteCeli=Object.entries(CELI_LIMITES).filter(([y])=>parseInt(y)>=llegada).reduce((s,[,v])=>s+(parseFloat(v)||0),0);
   const espacioCeli=Math.max(limiteCeli-aportadoCeli,0);
-  // Aporte mensual
+  // Aporte mensual: usar plan FIRE (con auto-trigger Fase A/B)
   const inv=VASIJAS.find(v=>v.key==='inv')||{pct:25};
-  const aporteMes=SAL*inv.pct/100;
+  const aporteMes=aporteFireReal();
   // LÓGICA RECOMENDACIÓN
   let rec={celi:0,rrsp:0,texto:'',color:'#00ff88'};
   if(espacioCeli<=0&&espacioRrsp<=0){
@@ -3561,7 +3666,7 @@ function renderRecomendador(){
       </div>
     </div>
     <p style="font-size:11px;color:${rec.color};line-height:1.4;margin:0">${rec.texto}</p>
-    <p style="font-size:10px;color:#444;margin-top:6px;line-height:1.4">📊 Aporte mensual disponible (${inv.pct}% del salario): ${fmtI(aporteMes)} · Espacio CELI: ${fmtI(espacioCeli)} · Espacio RRSP: ${fmtI(espacioRrsp)}</p>
+    <p style="font-size:10px;color:#444;margin-top:6px;line-height:1.4">📊 Aporte mensual del plan FIRE (Fase ${fasePlanFire()}): ${fmtI(aporteMes)} · Espacio CELI: ${fmtI(espacioCeli)} · Espacio RRSP: ${fmtI(espacioRrsp)}</p>
   `;
 }
 function updateRRSP(){onRrspConfigChange()}
@@ -3575,6 +3680,11 @@ function renderProyeccion(){
   if(portafolioVal>0)cap=portafolioVal;
   else if(lastPat!==null)cap=lastPat;
   else cap=aportadoTot;
+  // Si el usuario no ha tocado el slider, usar el plan FIRE como default
+  const projApSlider=$('proj-ap');
+  if(projApSlider&&!projApSlider.dataset.userTouched){
+    PROJ_CONFIG.aporteMensual=aporteFireReal();
+  }
   // Sincronizar sliders con config
   $('proj-ap').value=PROJ_CONFIG.aporteMensual;
   $('proj-ret').value=PROJ_CONFIG.retornoBase*100;
@@ -4494,7 +4604,41 @@ function openPerfilModal(){
   $('perfil-nombre').value=USER.nombre||'';
   $('perfil-fecha').value=USER.fechaInicioFire||'2026-05-01';
   $('perfil-frase').value=USER.frasePersonalizada||'';
+  // Plan de aporte FIRE
+  $('perfil-ap-total').value=APORTE_FIRE.aporteTotalMes;
+  $('perfil-fondo-meta').value=APORTE_FIRE.fondoMeta;
+  $('perfil-ap-fire').value=APORTE_FIRE.aporteFireFaseA;
+  $('perfil-ap-fondo').value=APORTE_FIRE.aporteFondoFaseA;
+  showFaseInfo();
   om('mo-perfil');
+}
+// Auto-calcular aporte fondo cuando cambia el de FIRE
+function autoCalcAporteFondo(){
+  const total=parseFloat($('perfil-ap-total').value)||0;
+  const fire=parseFloat($('perfil-ap-fire').value)||0;
+  const fondo=Math.max(total-fire,0);
+  $('perfil-ap-fondo').value=fondo;
+}
+// Mostrar fase actual y progreso del fondo
+function showFaseInfo(){
+  const div=$('perfil-fase-info');
+  if(!div)return;
+  const fondoAct=fondoSeguridadActual();
+  const meta=parseFloat($('perfil-fondo-meta').value)||APORTE_FIRE.fondoMeta;
+  const pct=meta>0?Math.min((fondoAct/meta)*100,100):0;
+  const enFaseB=fondoAct>=meta;
+  if(enFaseB){
+    div.style.background='#00ff8810';
+    div.style.border='1px solid #00ff8830';
+    div.style.color='#00ff88';
+    div.innerHTML=`<strong>🎉 FASE B ACTIVA</strong> — Fondo lleno (${fmt(fondoAct)} / ${fmt(meta)}). Todo tu aporte va a Inversión FIRE: <strong>${fmtI(parseFloat($('perfil-ap-total').value)||0)}/mes</strong>`;
+  }else{
+    div.style.background='#4d9fff10';
+    div.style.border='1px solid #4d9fff30';
+    div.style.color='#4d9fff';
+    const falta=meta-fondoAct;
+    div.innerHTML=`<strong>📊 FASE A ACTIVA</strong> — Fondo: ${fmt(fondoAct)} / ${fmt(meta)} (${pct.toFixed(0)}%). Faltan <strong>${fmt(falta)}</strong> para llegar a Fase B.`;
+  }
 }
 async function savePerfil(){
   const nombre=$('perfil-nombre').value.trim();
@@ -4505,12 +4649,32 @@ async function savePerfil(){
   USER.fechaInicioFire=fecha||'2026-05-01';
   USER.frasePersonalizada=frase;
   saveUser();
+  // Plan de aporte FIRE
+  const apTotal=parseFloat($('perfil-ap-total').value)||0;
+  const fondoMeta=parseFloat($('perfil-fondo-meta').value)||25000;
+  let apFire=parseFloat($('perfil-ap-fire').value)||0;
+  let apFondo=parseFloat($('perfil-ap-fondo').value)||0;
+  // Validar: fire + fondo no puede exceder total
+  if(apFire+apFondo>apTotal){
+    // Reajustar: priorizar inversión
+    if(apFire>apTotal){apFire=apTotal;apFondo=0}
+    else apFondo=apTotal-apFire;
+  }
+  APORTE_FIRE.aporteTotalMes=apTotal;
+  APORTE_FIRE.fondoMeta=fondoMeta;
+  APORTE_FIRE.aporteFireFaseA=apFire;
+  APORTE_FIRE.aporteFondoFaseA=apFondo;
+  saveAporteFire();
   // Sync a Sheets
   try{
     await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({_action:'saveUserConfig',userConfig:USER})});
   }catch(e){}
   cm('mo-perfil');
   updateClock();// refrescar saludo y días
+  // Refrescar todas las pantallas que dependen del aporte
+  renderAll();
+  renderOverview();
+  renderProyeccion();
   toast(`Perfil actualizado, ${USER.nombre.split(' ').pop()} ✓`,'ok');
 }
 function getSaludoDelMomento(){
@@ -4522,7 +4686,22 @@ function getSaludoDelMomento(){
 }
 function getDiasFire(){
   if(!USER.fechaInicioFire)return 1;
-  const inicio=new Date(USER.fechaInicioFire+'T00:00:00');
+  // Convertir a string si viene como objeto Date desde Sheets
+  let fechaStr=USER.fechaInicioFire;
+  if(fechaStr instanceof Date){
+    fechaStr=fechaStr.toISOString().split('T')[0];
+  }else if(typeof fechaStr!=='string'){
+    fechaStr=String(fechaStr);
+  }
+  // Normalizar: si tiene 'T' (formato ISO completo), tomar solo la fecha
+  if(fechaStr.includes('T'))fechaStr=fechaStr.split('T')[0];
+  // Validar formato YYYY-MM-DD
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(fechaStr)){
+    USER.fechaInicioFire='2026-05-01';
+    saveUser();
+    fechaStr='2026-05-01';
+  }
+  const inicio=new Date(fechaStr+'T00:00:00');
   const hoy=new Date();
   const diff=Math.floor((hoy-inicio)/(1000*60*60*24));
   return Math.max(diff+1,1);
@@ -4555,6 +4734,7 @@ async function init(){
   loadRrspConfig();
   loadRrspHistorial();
   loadProjConfig();
+  loadAporteFire();
   // Mostrar saludo y frase en la pantalla de carga
   const lgreetingEl=$('lgreeting');
   if(lgreetingEl){
