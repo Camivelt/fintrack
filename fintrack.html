@@ -137,6 +137,8 @@ body{background:#0a0a0f;font-family:'Rajdhani',sans-serif;color:#e0e0e0;min-heig
 .btn-d:hover{border-color:#c084fc;color:#c084fc}
 .btn-aporte{width:100%;background:#33aa6618;border:1px solid #33aa66;color:#33aa66;padding:9px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;cursor:pointer;border-radius:4px;transition:all 0.2s;text-transform:uppercase;margin-top:5px}
 .btn-aporte:hover{background:#33aa6630}
+.btn-ingreso{width:100%;background:#4d9fff18;border:1px solid #4d9fff;color:#4d9fff;padding:9px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;cursor:pointer;border-radius:4px;transition:all 0.2s;text-transform:uppercase;margin-top:5px}
+.btn-ingreso:hover{background:#4d9fff30}
 .btn-b{background:#4d9fff15;border:1px solid #4d9fff;color:#4d9fff;padding:7px 14px;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;cursor:pointer;border-radius:4px;transition:all 0.2s}
 .btn-b:hover{background:#4d9fff30}
 .btn-p{background:#c084fc15;border:1px solid #c084fc;color:#c084fc;padding:7px 14px;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;cursor:pointer;border-radius:4px;transition:all 0.2s}
@@ -253,11 +255,17 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
 .color-opt:hover{transform:scale(1.15)}
 .color-opt.selected{border-color:#fff;transform:scale(1.1)}
 
-.vasija-edit-row{display:grid;grid-template-columns:24px 1fr 80px 90px;gap:10px;align-items:center;margin-bottom:14px}
-.vasija-dot{width:14px;height:14px;border-radius:50%}
+.vasija-edit-row{display:grid;grid-template-columns:32px 1fr 80px 90px 28px;gap:10px;align-items:center;margin-bottom:14px}
+.vasija-dot{width:24px;height:24px;border-radius:50%;cursor:pointer;border:2px solid #1a1a2e;transition:all 0.2s}
+.vasija-dot:hover{border-color:#fff;transform:scale(1.1)}
+.vasija-color-picker{position:absolute;background:#0d0d14;border:1px solid #1a1a2e;border-radius:6px;padding:8px;display:grid;grid-template-columns:repeat(8,18px);gap:4px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.5)}
+.vasija-color-swatch{width:18px;height:18px;border-radius:50%;cursor:pointer;border:1px solid #333;transition:all 0.15s}
+.vasija-color-swatch:hover{transform:scale(1.2);border-color:#fff}
 .vasija-name-input{background:#0a0a0f;border:1px solid #1a1a2e;color:#ccc;padding:6px 10px;font-family:'Rajdhani',sans-serif;font-size:13px;border-radius:4px;width:100%}
 .vasija-pct-input{background:#0a0a0f;border:1px solid #1a1a2e;color:#fff;padding:6px;font-family:'JetBrains Mono',monospace;font-size:13px;border-radius:4px;text-align:center;width:100%}
 .vasija-amt{font-family:'JetBrains Mono',monospace;font-size:11px;color:#666;text-align:right}
+.vasija-del{background:none;border:none;color:#444;cursor:pointer;font-size:18px;padding:0;line-height:1;transition:color 0.2s}
+.vasija-del:hover{color:#ff4d4d}
 .vasija-sum-row{padding:10px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:11px;display:flex;justify-content:space-between;margin-top:8px}
 .vasija-sum-ok{background:#00ff8810;border:1px solid #00ff8830;color:#00ff88}
 .vasija-sum-bad{background:#ff4d4d10;border:1px solid #ff4d4d30;color:#ff4d4d}
@@ -505,6 +513,30 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
   </div>
 </div></div>
 
+<!-- Modal: Registrar ingreso extra -->
+<div class="mo" id="mo-ingreso"><div class="md" style="max-width:480px">
+  <div class="mt2">💵 Registrar ingreso extra</div>
+  <p style="font-size:11px;color:#666;margin-bottom:14px">Dinero recibido fuera del salario regular: bonos, regalos, freelance, reembolsos, etc. Se suma al Disponible del mes.</p>
+  <div class="fg">
+    <div><label class="fl">Fecha</label><input class="fi" id="ig-date" type="date"/></div>
+    <div><label class="fl">Monto ($)</label><input class="fi" id="ig-monto" type="number" min="0" step="0.01" placeholder="0.00"/></div>
+    <div class="fgf"><label class="fl">Tipo</label><select class="fs" id="ig-tipo">
+      <option value="Bono">🎯 Bono / Aguinaldo</option>
+      <option value="Freelance">💼 Freelance / Consultoría</option>
+      <option value="Reembolso">↩️ Reembolso (impuestos, gastos)</option>
+      <option value="Regalo">🎁 Regalo / Herencia</option>
+      <option value="Venta">🏷️ Venta de algo</option>
+      <option value="Inversión">📈 Dividendos / Intereses</option>
+      <option value="Otro">💵 Otro</option>
+    </select></div>
+    <div class="fgf"><label class="fl">Descripción</label><input class="fi" id="ig-desc" placeholder="ej. Bono de fin de año, Mes gordo extra"/></div>
+  </div>
+  <div class="ma">
+    <button class="btn-cancel" onclick="cm('mo-ingreso')">Cancelar</button>
+    <button class="btn-ok" onclick="saveIngreso()">Registrar ingreso</button>
+  </div>
+</div></div>
+
 <!-- Modal: Salario con historial -->
 <div class="mo" id="mo-salary"><div class="md md-lg">
   <div class="mt2">
@@ -614,16 +646,19 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
 </div></div>
 
 <!-- Modal: Editar Vasijas -->
-<div class="mo" id="mo-vas"><div class="md md-lg">
+<div class="mo" id="mo-vas"><div class="md md-lg" style="max-width:680px">
   <div class="mt2">
-    <span>⚙ Editar distribución de vasijas</span>
+    <span>⚙ Editar vasijas</span>
     <button class="btn-tiny" onclick="cm('mo-vas')" style="font-size:14px">×</button>
   </div>
-  <p style="font-size:11px;color:#666;margin-bottom:14px">La suma de los 4 porcentajes debe ser exactamente 100%. Los montos se calculan sobre tu salario actual: <span id="vas-sal" style="color:#00ff88;font-family:'JetBrains Mono',monospace">$4,940</span></p>
+  <p style="font-size:11px;color:#666;margin-bottom:14px">Crea, edita, elimina vasijas. Cambia color, % o monto fijo. La suma de los % debe ser exactamente 100%. Los montos se calculan sobre tu salario actual: <span id="vas-sal" style="color:#00ff88;font-family:'JetBrains Mono',monospace">$4,940</span></p>
   <div id="vas-edit-rows"></div>
+  <div style="margin:10px 0">
+    <button class="btn-d" onclick="addVasija()" style="border-color:#00ff88;color:#00ff88">+ Nueva vasija</button>
+  </div>
   <div id="vas-sum-row" class="vasija-sum-row vasija-sum-ok"><span>SUMA TOTAL</span><span id="vas-sum-val">100% — $4,940</span></div>
   <div class="ma">
-    <button class="btn-cancel" onclick="resetVasijas()">↺ Restaurar 50/15/25/10</button>
+    <button class="btn-cancel" onclick="resetVasijas()">↺ Restaurar default</button>
     <button class="btn-cancel" onclick="cm('mo-vas')">Cancelar</button>
     <button class="btn-ok" onclick="saveVasijas()" id="btn-save-vas">Guardar</button>
   </div>
@@ -745,7 +780,7 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
       <div class="kpi-bar"><div class="kpi-bar-fill" id="k-seg-bar" style="background:#ffaa00;width:0%"></div></div>
     </div>
   </div>
-  <div class="kpi-row k4">
+  <div class="kpi-row k5">
     <div class="kpi-card kpi-pro" style="--accent:#ff6b6b">
       <div class="kl">Gastos fijos</div>
       <div class="kv" id="k-fij">—</div>
@@ -769,6 +804,12 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
       <div class="kv" id="k-ap">—</div>
       <div class="ks" id="k-ap-sub">—</div>
       <div class="kpi-bar"><div class="kpi-bar-fill" id="k-ap-bar" style="background:#33aa66;width:0%"></div></div>
+    </div>
+    <div class="kpi-card kpi-pro" style="--accent:#4d9fff;cursor:pointer" onclick="scrollToIngresos()" title="Click para ver lista de ingresos extras">
+      <div class="kl">💵 Ingresos Extra</div>
+      <div class="kv" id="k-ig">—</div>
+      <div class="ks" id="k-ig-sub">—</div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" id="k-ig-bar" style="background:#4d9fff;width:0%"></div></div>
     </div>
   </div>
   <div class="g2">
@@ -800,6 +841,7 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
         <div><label class="fl">Fecha</label><input class="fi" id="f-date" type="date"/></div>
         <div class="fgf"><button class="btn-g" id="btn-add" onclick="addExp()">+ Registrar y guardar en Sheets</button></div>
         <div class="fgf"><button class="btn-aporte" onclick="openAporteModal()">💰 Registrar aporte (Inversión / Fondo)</button></div>
+        <div class="fgf"><button class="btn-ingreso" onclick="openIngresoModal()">💵 Registrar ingreso extra (Bono / Freelance / Reembolso)</button></div>
         <div class="fgf"><button class="btn-d" onclick="openCatModal()">+ Nueva categoría personalizada</button></div>
       </div>
       <div class="qgrid" id="qbtns"></div>
@@ -841,6 +883,14 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
       </div>
       <div class="txs"><table class="tbl"><thead><tr><th>Fecha</th><th>Tipo</th><th>Cuenta</th><th style="text-align:right">Monto</th><th></th></tr></thead><tbody id="ap-body"></tbody></table></div>
     </div>
+  </div>
+  <div class="panel" id="ingresos-panel" style="margin-top:14px">
+    <div class="pt">
+      <span>💵 Ingresos Extra — <span id="ig-cnt" style="color:#4d9fff">0</span> registrados · <span style="color:#666">Acumulado total:</span> <span id="ig-total" style="color:#4d9fff">$0</span></span>
+      <button class="btn-sm" onclick="openIngresoModal()" style="border-color:#4d9fff;color:#4d9fff">+ Ingreso</button>
+    </div>
+    <p style="font-size:11px;color:#666;margin:0 0 10px 0">Bonos, intereses bancarios, freelance, reembolsos, regalos. Se acumulan sin perderse mes a mes.</p>
+    <div class="txs"><table class="tbl"><thead><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th style="text-align:right">Monto</th><th></th></tr></thead><tbody id="ig-body"></tbody></table></div>
   </div>
 </div>
 
@@ -1769,7 +1819,7 @@ const COLORS=['#ff6b6b','#ffaa00','#ffee55','#00ff88','#55ccff','#4d9fff','#c084
 
 // State
 let CATS=[],VASIJAS=[];
-let expenses=[],fireTxs=[],seguimiento=[],aportes=[],curMonth='';
+let expenses=[],fireTxs=[],seguimiento=[],aportes=[],ingresos=[],curMonth='';
 let productos=[],posiciones=[],historialPrecios=[];
 let editingProductoKey=null,editingPosicionKey=null;
 let catF='month',trendF='weekly',trackerOpen=true,projRetorno=0.07;
@@ -2264,6 +2314,8 @@ async function loadSheets(){
   if(!aportes.length){
     const ap=localStorage.getItem('ft_aportes');if(ap) aportes=JSON.parse(ap);
   }
+  // Cargar ingresos extras desde localStorage
+  const ig=localStorage.getItem('ft_ingresos');if(ig) ingresos=JSON.parse(ig);
 }
 async function saveAporteToSheets(ap){
   setSS('loading');
@@ -2649,25 +2701,86 @@ function handleImport(ev){
   reader.readAsText(file);
 }
 
-// ─── EDITOR DE VASIJAS ────────────────────
+// ─── EDITOR DE VASIJAS (CRUD COMPLETO) ────────────────────
+let _vasijasEdit=[]; // copia temporal mientras se edita
+
 function renderVasEditModal(){
+  // Hacer copia profunda para edición
+  _vasijasEdit=JSON.parse(JSON.stringify(VASIJAS));
   $('vas-sal').textContent=fmtI(SAL);
-  $('vas-edit-rows').innerHTML=VASIJAS.map((v,i)=>`
-    <div class="vasija-edit-row">
-      <div class="vasija-dot" style="background:${v.color}"></div>
-      <input class="vasija-name-input" id="vas-name-${i}" value="${v.label}"/>
-      <input class="vasija-pct-input" id="vas-pct-${i}" type="number" min="0" max="100" step="0.5" value="${v.pct}" oninput="updateVasSum()"/>
-      <div class="vasija-amt" id="vas-amt-${i}">${fmtI(SAL*v.pct/100)}</div>
-    </div>
-  `).join('');
+  renderVasEditRows();
   updateVasSum();
 }
+
+function renderVasEditRows(){
+  $('vas-edit-rows').innerHTML=_vasijasEdit.map((v,i)=>`
+    <div class="vasija-edit-row">
+      <div class="vasija-dot" style="background:${v.color}" onclick="openVasColorPicker(${i},event)" title="Click para cambiar color"></div>
+      <input class="vasija-name-input" id="vas-name-${i}" value="${v.label}" placeholder="Nombre de vasija" oninput="_vasijasEdit[${i}].label=this.value"/>
+      <input class="vasija-pct-input" id="vas-pct-${i}" type="number" min="0" max="100" step="0.5" value="${v.pct}" oninput="onVasPctChange(${i},this.value)"/>
+      <div class="vasija-amt" id="vas-amt-${i}">${fmtI(SAL*v.pct/100)}</div>
+      <button class="vasija-del" onclick="removeVasija(${i})" title="Eliminar vasija">×</button>
+    </div>
+  `).join('');
+}
+
+function onVasPctChange(i,val){
+  _vasijasEdit[i].pct=parseFloat(val)||0;
+  $('vas-amt-'+i).textContent=fmtI(SAL*_vasijasEdit[i].pct/100);
+  updateVasSum();
+}
+
+function openVasColorPicker(i,event){
+  event.stopPropagation();
+  // Cerrar otros pickers abiertos
+  document.querySelectorAll('.vasija-color-picker').forEach(p=>p.remove());
+  const COLORS_LIST=['#ff6b6b','#ff8c42','#ffaa00','#ffee55','#00ff88','#33aa66','#55ccff','#4d9fff','#0088cc','#c084fc','#aa44ff','#ff4d9f','#ee4488','#dd6633','#888888','#bbbbbb'];
+  const picker=document.createElement('div');
+  picker.className='vasija-color-picker';
+  picker.innerHTML=COLORS_LIST.map(c=>`<div class="vasija-color-swatch" style="background:${c}" onclick="setVasColor(${i},'${c}')"></div>`).join('');
+  // Posicionar al lado del dot
+  const rect=event.target.getBoundingClientRect();
+  picker.style.top=(rect.bottom+window.scrollY+5)+'px';
+  picker.style.left=(rect.left+window.scrollX)+'px';
+  document.body.appendChild(picker);
+  // Cerrar al hacer click fuera
+  setTimeout(()=>{
+    document.addEventListener('click',function closer(e){
+      if(!picker.contains(e.target)){picker.remove();document.removeEventListener('click',closer)}
+    });
+  },10);
+}
+
+function setVasColor(i,color){
+  _vasijasEdit[i].color=color;
+  document.querySelectorAll('.vasija-color-picker').forEach(p=>p.remove());
+  renderVasEditRows();
+  updateVasSum();
+}
+
+function addVasija(){
+  if(_vasijasEdit.length>=8){toast('Máximo 8 vasijas','warn');return}
+  const usedColors=_vasijasEdit.map(v=>v.color);
+  const allColors=['#ff6b6b','#ff8c42','#ffaa00','#ffee55','#00ff88','#33aa66','#55ccff','#4d9fff','#c084fc','#aa44ff','#ff4d9f'];
+  const newColor=allColors.find(c=>!usedColors.includes(c))||'#888888';
+  const newKey='custom_'+Date.now();
+  _vasijasEdit.push({key:newKey,label:'Nueva vasija',pct:0,color:newColor});
+  renderVasEditRows();
+  updateVasSum();
+}
+
+function removeVasija(i){
+  if(_vasijasEdit.length<=1){toast('Debe haber al menos 1 vasija','warn');return}
+  if(!confirm(`¿Eliminar la vasija "${_vasijasEdit[i].label}"?`))return;
+  _vasijasEdit.splice(i,1);
+  renderVasEditRows();
+  updateVasSum();
+}
+
 function updateVasSum(){
   let sum=0;
-  for(let i=0;i<VASIJAS.length;i++){
-    const p=parseFloat($('vas-pct-'+i).value)||0;
-    sum+=p;
-    $('vas-amt-'+i).textContent=fmtI(SAL*p/100);
+  for(let i=0;i<_vasijasEdit.length;i++){
+    sum+=_vasijasEdit[i].pct||0;
   }
   const ok=Math.abs(sum-100)<0.01;
   $('vas-sum-row').className='vasija-sum-row '+(ok?'vasija-sum-ok':'vasija-sum-bad');
@@ -2675,24 +2788,29 @@ function updateVasSum(){
   $('btn-save-vas').disabled=!ok;
   $('btn-save-vas').style.opacity=ok?'1':'0.4';
 }
+
 function saveVasijas(){
-  let sum=0;const newVas=[];
-  for(let i=0;i<VASIJAS.length;i++){
-    const p=parseFloat($('vas-pct-'+i).value)||0;
-    const nm=$('vas-name-'+i).value.trim()||VASIJAS[i].label;
-    sum+=p;
-    newVas.push({...VASIJAS[i],label:nm,pct:p});
-  }
+  let sum=0;
+  for(let i=0;i<_vasijasEdit.length;i++){sum+=_vasijasEdit[i].pct||0}
   if(Math.abs(sum-100)>=0.01){toast('La suma debe ser 100%','warn');return}
-  VASIJAS=newVas;saveVasijasLocal();syncCatsToSheets();
+  if(_vasijasEdit.length===0){toast('Debe haber al menos 1 vasija','warn');return}
+  // Validar nombres
+  for(const v of _vasijasEdit){
+    if(!v.label||!v.label.trim()){toast('Todas las vasijas deben tener nombre','warn');return}
+  }
+  VASIJAS=_vasijasEdit.map(v=>({...v,label:v.label.trim()}));
+  saveVasijasLocal();
+  if(typeof syncCatsToSheets==='function')syncCatsToSheets();
   cm('mo-vas');renderAll();toast('Vasijas actualizadas ✓','ok');
 }
+
 function resetVasijas(){
-  if(!confirm('¿Restaurar a 50% / 15% / 25% / 10%?'))return;
+  if(!confirm('¿Restaurar a las 4 vasijas originales (50/15/25/10)?'))return;
   VASIJAS=JSON.parse(JSON.stringify(SEED_VASIJAS));
-  // Restaurar a defaults clásicos no a 56/15/25/4
   VASIJAS[0].pct=50;VASIJAS[3].pct=10;
-  saveVasijasLocal();syncCatsToSheets();renderVasEditModal();renderAll();
+  saveVasijasLocal();
+  if(typeof syncCatsToSheets==='function')syncCatsToSheets();
+  renderVasEditModal();renderAll();
 }
 
 // Inversión & Seguimiento (sin cambios funcionales)
@@ -2842,7 +2960,7 @@ function renderAll(){
   const apSeg=aps.filter(a=>a.tipo==='Fondo Seguridad').reduce((s,a)=>s+parseFloat(a.monto),0);
   renderPeriodInfo();
   renderKPIs(ts,t,apTotal,apInv,apSeg);
-  renderVasijas(t,apInv,apSeg);renderAlertas(t);renderTracker(t);renderBudgets(t);renderTx(exps);renderAportes();renderCatChart();renderTrendChart();renderMTabs();renderQBtns();
+  renderVasijas(t,apInv,apSeg);renderAlertas(t);renderTracker(t);renderBudgets(t);renderTx(exps);renderAportes();renderIngresos();renderCatChart();renderTrendChart();renderMTabs();renderQBtns();
   $('tx-cnt').textContent=exps.length;$('sal-disp').textContent=fmtI(SAL);
 }
 
@@ -3009,13 +3127,21 @@ function renderVasijas(t,apInv,apSeg){
   const r=getPeriodRange();const m=r.months;
   const vivir=vivirTotal(t),ocio=t.ocio||0;
   apInv=apInv||0;apSeg=apSeg||0;
-  // VASIJAS: [0]=vivir, [1]=seg, [2]=inv, [3]=rec
-  const data=[
-    {...VASIJAS[0],g:vivir,type:'expense'},
-    {...VASIJAS[1],g:apSeg,type:'goal'},
-    {...VASIJAS[2],g:apInv,type:'goal'},
-    {...VASIJAS[3],g:ocio,type:'expense'}
-  ];
+  // Mapa dinámico key -> {gasto, tipo}
+  // Tipos especiales (mantienen retrocompat):
+  //   'vivir' = vivirTotal (todos los gastos no-ocio)
+  //   'seg' = apSeg (aporte fondo seguridad)
+  //   'inv' = apInv (aporte inversión)
+  //   'rec' = gastos categoría ocio
+  // Custom: tipo 'info' (sólo informativo, sin gasto)
+  function vasijaData(v){
+    if(v.key==='vivir')return {g:vivir,type:'expense'};
+    if(v.key==='seg')return {g:apSeg,type:'goal'};
+    if(v.key==='inv')return {g:apInv,type:'goal'};
+    if(v.key==='rec')return {g:ocio,type:'expense'};
+    return {g:0,type:'info'}; // custom: sin gasto, solo objetivo informativo
+  }
+  const data=VASIJAS.map(v=>{const d=vasijaData(v);return {...v,g:d.g,type:d.type}});
   $('vasijas').innerHTML=data.map(v=>{
     const sr=getSalaryForRange(r.from,r.to);
     const ingreso=sr.total;
@@ -3023,17 +3149,23 @@ function renderVasijas(t,apInv,apSeg){
     let bc,pc;
     if(v.type==='goal'){
       bc=barColor(p,'goal');pc=subColor(p,'goal');
+    }else if(v.type==='info'){
+      bc=v.color;pc=v.color;
     }else{
       const ov=v.g>a;
       bc=ov?'#ff4d4d':p>80?'#ffaa00':v.color;
       pc=ov?'#ff4d4d':p>80?'#ffaa00':v.color;
     }
-    return`<div class="vrow"><div class="vhead"><span style="font-size:13px;font-weight:600;color:${v.color}">${v.label}</span><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#444">${fmt(v.g)} / ${fmt(a)}</span></div><div class="bg"><div class="bf" style="width:${p.toFixed(1)}%;background:${bc}"></div></div><div class="vmeta"><span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#2a2a3a">Objetivo ${v.pct}% → real ${ingreso>0?(v.g/ingreso*100).toFixed(1):0}%</span><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:${pc}">${p.toFixed(0)}%</span></div></div>`;
+    const sufijo=v.type==='info'?'<span style="color:#666;font-size:9px"> · informativa</span>':'';
+    const realPct=ingreso>0?(v.g/ingreso*100).toFixed(1):0;
+    return`<div class="vrow"><div class="vhead"><span style="font-size:13px;font-weight:600;color:${v.color}">${v.label}${sufijo}</span><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#444">${v.type==='info'?fmt(a)+' objetivo':fmt(v.g)+' / '+fmt(a)}</span></div><div class="bg"><div class="bf" style="width:${p.toFixed(1)}%;background:${bc}"></div></div><div class="vmeta"><span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#2a2a3a">Objetivo ${v.pct}%${v.type==='info'?'':' → real '+realPct+'%'}</span><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:${pc}">${v.type==='info'?'—':p.toFixed(0)+'%'}</span></div></div>`;
   }).join('');
 }
 function renderAlertas(t){
   const r=getPeriodRange();
-  const als=[];const vivirPct=VASIJAS[0].pct;
+  const vivirVas=VASIJAS.find(v=>v.key==='vivir');
+  const vivirPct=vivirVas?vivirVas.pct:50;
+  const als=[];
   activeCatsInPeriod().forEach(c=>{
     const g=t[c.key]||0;
     const budgetMul=catBudgetForRange(c,r.from,r.to);
@@ -3602,18 +3734,21 @@ function onRrspConfigChange(){
   renderRecomendador();
 }
 function calcEspacioRrsp(){
-  // NUEVA LÓGICA: usar histórico si existe, sino fallback al método NOA simple
+  // FIX BUG: solo usar histórico si tiene ingresos > 0 (evita inicialización con 0s)
   const historicoYrs=Object.keys(RRSP_HISTORIAL).map(y=>parseInt(y));
-  if(historicoYrs.length>0){
+  const historicoConIngreso=historicoYrs.filter(y=>parseFloat(RRSP_HISTORIAL[y]?.ingreso)>0);
+  if(historicoConIngreso.length>0){
     const aportesRrsp=aportes.filter(a=>a.cuenta==='RRSP/REER'&&a.tipo==='Inversión');
     const aportadoTotal=aportesRrsp.reduce((s,a)=>s+parseFloat(a.monto),0);
     let espacioGenerado=0;
-    historicoYrs.forEach(y=>{
+    historicoConIngreso.forEach(y=>{
       const ing=parseFloat(RRSP_HISTORIAL[y]?.ingreso)||0;
       const lim=parseFloat(RRSP_LIMITES[y])||999999;
       espacioGenerado+=Math.min(ing*0.18,lim);
     });
-    return Math.max(espacioGenerado-aportadoTotal,0);
+    // Sumar también el espacio del NOA si existe (es el espacio "antes" del histórico que registraste)
+    const espacioNoa=RRSP_CONFIG.espacioNOA||0;
+    return Math.max(espacioNoa+espacioGenerado-aportadoTotal,0);
   }
   // Fallback: NOA + 18% del ingreso actual
   const espacioBase=RRSP_CONFIG.espacioNOA||0;
@@ -4685,6 +4820,73 @@ function renderAportes(){
     return`<tr><td style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#444">${a.date}</td><td><span class="pill" style="background:${tipoColor}18;color:${tipoColor};border:1px solid ${tipoColor}35">${a.tipo.substring(0,8).toUpperCase()}</span></td><td style="color:#aaa;font-size:10px">${a.cuenta}</td><td style="text-align:right;font-family:'JetBrains Mono',monospace;color:#33aa66">${fmt(a.monto)}</td><td><button class="xbtn" onclick="delAporte(${ri})">×</button></td></tr>`;
   }).join(''):'<tr><td colspan="5" style="color:#1a1a2e;padding:14px 0;font-family:JetBrains Mono,monospace;font-size:9px">SIN APORTES — REGISTRA UNO</td></tr>';
 }
+
+// ─── INGRESOS EXTRAS ──────────────────────
+function openIngresoModal(){
+  $('ig-date').value=today();
+  $('ig-monto').value='';
+  $('ig-tipo').value='Bono';
+  $('ig-desc').value='';
+  om('mo-ingreso');
+  setTimeout(()=>$('ig-monto').focus(),100);
+}
+function saveIngreso(){
+  const date=$('ig-date').value;
+  const monto=parseFloat($('ig-monto').value);
+  const tipo=$('ig-tipo').value;
+  const desc=$('ig-desc').value.trim();
+  if(!date||isNaN(monto)||monto<=0){toast('Completa fecha y monto','warn');return}
+  const ig={date,tipo,monto,desc,id:Date.now()};
+  ingresos.push(ig);
+  localStorage.setItem('ft_ingresos',JSON.stringify(ingresos));
+  cm('mo-ingreso');
+  renderAll();
+  toast(`Ingreso extra ${fmt(monto)} (${tipo}) ✓`,'ok');
+}
+function delIngreso(i){
+  if(i<0||!ingresos[i])return;
+  const ig=ingresos[i];
+  if(!confirm(`¿Eliminar ingreso de ${fmt(ig.monto)} (${ig.tipo})?`))return;
+  ingresos.splice(i,1);
+  localStorage.setItem('ft_ingresos',JSON.stringify(ingresos));
+  renderAll();
+  toast('Ingreso eliminado ✓','warn');
+}
+function renderIngresos(){
+  // Mes actual (filtrado)
+  const r=getPeriodRange();
+  const igMes=ingresos.filter(i=>{const k=mkKey(i.date);return k>=mkKey(r.from)&&k<=mkKey(r.to)});
+  const totalMes=igMes.reduce((s,i)=>s+parseFloat(i.monto),0);
+  // Acumulado total (todos los tiempos)
+  const totalAcum=ingresos.reduce((s,i)=>s+parseFloat(i.monto),0);
+  // KPI
+  $('k-ig').textContent=fmt(totalAcum);
+  $('k-ig-sub').innerHTML=igMes.length>0
+    ?`<span style="color:#4d9fff">+${fmt(totalMes)}</span> este período · ${ingresos.length} total`
+    :ingresos.length>0
+      ?`Sin ingresos este período · ${ingresos.length} acumulados`
+      :`<span style="color:#666">Click "+ Ingreso" para registrar</span>`;
+  // Barra: porcentaje del mes vs total acumulado
+  const pctBar=totalAcum>0?Math.min((totalMes/totalAcum)*100,100):0;
+  $('k-ig-bar').style.width=pctBar.toFixed(1)+'%';
+  // Contador y total en panel
+  $('ig-cnt').textContent=ingresos.length;
+  $('ig-total').textContent=fmt(totalAcum);
+  // Tabla (todos los ingresos, ordenados por fecha desc)
+  const sorted=[...ingresos].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const TIPO_COLORS={'Bono':'#ffaa00','Freelance':'#c084fc','Reembolso':'#00ff88','Regalo':'#ff8c42','Venta':'#55ccff','Inversión':'#33aa66','Otro':'#888'};
+  const TIPO_EMOJI={'Bono':'🎯','Freelance':'💼','Reembolso':'↩️','Regalo':'🎁','Venta':'🏷️','Inversión':'📈','Otro':'💵'};
+  $('ig-body').innerHTML=sorted.length?sorted.map(ig=>{
+    const ri=ingresos.findIndex(x=>x.id===ig.id);
+    const c=TIPO_COLORS[ig.tipo]||'#888';
+    const e=TIPO_EMOJI[ig.tipo]||'💵';
+    return`<tr><td style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#444">${ig.date}</td><td><span class="pill" style="background:${c}18;color:${c};border:1px solid ${c}35">${e} ${ig.tipo.substring(0,8).toUpperCase()}</span></td><td style="color:#aaa;font-size:11px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ig.desc||'—'}</td><td style="text-align:right;font-family:'JetBrains Mono',monospace;color:#4d9fff;font-weight:700">+${fmt(ig.monto)}</td><td><button class="xbtn" onclick="delIngreso(${ri})">×</button></td></tr>`;
+  }).join(''):'<tr><td colspan="5" style="color:#1a1a2e;padding:14px 0;font-family:JetBrains Mono,monospace;font-size:9px;text-align:center">SIN INGRESOS EXTRA — REGISTRA UNO</td></tr>';
+}
+function scrollToIngresos(){
+  const el=$('ingresos-panel');
+  if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
+}
 function delInv(i){if(i<0)return;fireTxs.splice(i,1);localStorage.setItem('ft_fire',JSON.stringify(fireTxs));renderPortafolio();toast('Eliminado','warn')}
 function delSeg(i){if(i<0)return;seguimiento.splice(i,1);localStorage.setItem('ft_seg',JSON.stringify(seguimiento));renderSeguimiento();toast('Eliminado','warn')}
 function clearMonth(){if(!confirm(`¿Borrar gastos de ${mkLbl(curMonth)}?`))return;expenses=expenses.filter(e=>mkKey(e.date)!==curMonth);renderAll();toast('Mes eliminado','warn')}
@@ -4932,6 +5134,7 @@ function exportarBackup(){
     vasijas:VASIJAS,
     expenses,
     aportes,
+    ingresos,
     seguimiento,
     salaryHistory,
     productos,
@@ -4975,6 +5178,7 @@ function importarBackup(file){
       if(data.vasijas){VASIJAS=data.vasijas;saveVasijasLocal()}
       if(data.expenses){expenses=data.expenses}
       if(data.aportes){aportes=data.aportes;localStorage.setItem('ft_aportes',JSON.stringify(aportes))}
+      if(data.ingresos){ingresos=data.ingresos;localStorage.setItem('ft_ingresos',JSON.stringify(ingresos))}
       if(data.seguimiento){seguimiento=data.seguimiento;localStorage.setItem('ft_seg',JSON.stringify(seguimiento))}
       if(data.salaryHistory){salaryHistory=data.salaryHistory;localStorage.setItem('ft_salary_history',JSON.stringify(salaryHistory));SAL=getCurrentSalary()}
       if(data.productos){productos=data.productos;localStorage.setItem('ft_productos',JSON.stringify(productos))}
