@@ -427,6 +427,21 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
     <div id="perfil-fase-info" style="margin-top:10px;padding:8px;border-radius:4px;font-size:11px"></div>
   </div>
 
+  <!-- Saldos Iniciales -->
+  <div style="margin-top:14px;padding-top:14px;border-top:1px solid #1a1a2e">
+    <div class="slbl" style="color:#ffaa00;margin-bottom:8px">💎 SALDOS INICIALES (dinero previo a PHOENIX)</div>
+    <p style="font-size:10px;color:#666;margin-bottom:10px;line-height:1.4">Si ya tenías dinero ahorrado o invertido antes de empezar a usar PHOENIX, regístralo aquí. Se sumará a tus aportes para que los KPIs reflejen tu situación real.</p>
+    <div class="fg">
+      <div><label class="fl">🛡️ Fondo Seguridad inicial ($)</label><input class="fi" id="perfil-saldo-fondo" type="number" min="0" step="100" placeholder="0" oninput="showSaldoInfo()"/></div>
+      <div><label class="fl">📈 Inversión FIRE inicial ($)</label><input class="fi" id="perfil-saldo-inv" type="number" min="0" step="100" placeholder="0" oninput="showSaldoInfo()"/></div>
+      <div><label class="fl">🏦 CELI ya aportado ($)</label><input class="fi" id="perfil-saldo-celi" type="number" min="0" step="100" placeholder="0" oninput="showSaldoInfo()"/></div>
+      <div><label class="fl">💰 RRSP ya aportado ($)</label><input class="fi" id="perfil-saldo-rrsp" type="number" min="0" step="100" placeholder="0" oninput="showSaldoInfo()"/></div>
+      <div class="fgf"><label class="fl">Fecha de referencia (opcional)</label><input class="fi" id="perfil-saldo-fecha" type="date"/></div>
+      <div class="fgf"><label class="fl">Notas (opcional)</label><input class="fi" id="perfil-saldo-notas" placeholder="ej. Saldo al iniciar PHOENIX en mayo 2026"/></div>
+    </div>
+    <div id="perfil-saldo-info" style="margin-top:10px;padding:8px;background:#ffaa0010;border:1px solid #ffaa0030;border-radius:4px;font-size:11px;color:#ffaa00;display:none"></div>
+  </div>
+
   <div style="background:#ff8c4208;border:1px solid #ff8c4220;border-radius:5px;padding:10px;margin-top:12px">
     <p style="font-size:10px;color:#ff8c42;margin:0;line-height:1.5">📊 <strong>¿Quieres agregar tus propias frases?</strong> Crea una hoja "Frases" en tu Google Sheet con columnas <code>frase</code> y <code>autor</code>. La app las cargará automáticamente.</p>
   </div>
@@ -1766,8 +1781,29 @@ function loadAporteFire(){
 }
 function saveAporteFire(){localStorage.setItem('ft_aporte_fire',JSON.stringify(APORTE_FIRE))}
 // Helper: calcular fondo seguridad actual
+// ═══════════════════════════════════════════════════
+// SALDOS INICIALES (dinero que ya tenías antes de PHOENIX)
+// ═══════════════════════════════════════════════════
+const SALDOS_INICIALES_DEFAULT={
+  fondoSeguridad:0,
+  inversionFire:0,
+  celi:0,
+  rrsp:0,
+  fecha:'',
+  notas:''
+};
+let SALDOS_INICIALES={...SALDOS_INICIALES_DEFAULT};
+function loadSaldosIniciales(){
+  const s=localStorage.getItem('ft_saldos_iniciales');
+  if(s){try{SALDOS_INICIALES={...SALDOS_INICIALES_DEFAULT,...JSON.parse(s)}}catch(e){SALDOS_INICIALES={...SALDOS_INICIALES_DEFAULT}}}
+  else SALDOS_INICIALES={...SALDOS_INICIALES_DEFAULT};
+}
+function saveSaldosIniciales(){localStorage.setItem('ft_saldos_iniciales',JSON.stringify(SALDOS_INICIALES))}
+loadSaldosIniciales();
+
 function fondoSeguridadActual(){
-  return aportes.filter(a=>a.tipo==='Fondo Seguridad').reduce((s,a)=>s+parseFloat(a.monto),0);
+  const aportado=aportes.filter(a=>a.tipo==='Fondo Seguridad').reduce((s,a)=>s+parseFloat(a.monto),0);
+  return aportado+(parseFloat(SALDOS_INICIALES.fondoSeguridad)||0);
 }
 // Helper: aporte FIRE real según fase actual
 function aporteFireReal(){
@@ -2082,24 +2118,24 @@ function calcFire(cap,aporteMes,retorno,meta,edad){
 }
 // Patrimonio FIRE = suma de aportes de tipo Inversión (no incluye Fondo Seguridad)
 function fireCapital(){
-  if(!aportes||!aportes.length)return 0;
-  return aportes
+  const aportado=(!aportes||!aportes.length)?0:aportes
     .filter(a=>a.tipo==='Inversión')
     .reduce((s,a)=>s+(parseFloat(a.monto)||0),0);
+  return aportado+(parseFloat(SALDOS_INICIALES.inversionFire)||0);
 }
-// Patrimonio CELI = aportes Inversión a cuenta TFSA/CELI
+// Patrimonio CELI = aportes Inversión a cuenta TFSA/CELI + saldo inicial CELI
 function celiCapital(){
-  if(!aportes||!aportes.length)return 0;
-  return aportes
+  const aportado=(!aportes||!aportes.length)?0:aportes
     .filter(a=>a.tipo==='Inversión'&&a.cuenta==='TFSA/CELI')
     .reduce((s,a)=>s+(parseFloat(a.monto)||0),0);
+  return aportado+(parseFloat(SALDOS_INICIALES.celi)||0);
 }
-// Patrimonio RRSP = aportes Inversión a cuenta RRSP/REER
+// Patrimonio RRSP = aportes Inversión a cuenta RRSP/REER + saldo inicial RRSP
 function rrspCapital(){
-  if(!aportes||!aportes.length)return 0;
-  return aportes
+  const aportado=(!aportes||!aportes.length)?0:aportes
     .filter(a=>a.tipo==='Inversión'&&a.cuenta==='RRSP/REER')
     .reduce((s,a)=>s+(parseFloat(a.monto)||0),0);
+  return aportado+(parseFloat(SALDOS_INICIALES.rrsp)||0);
 }
 // Aportes YTD (este año) tipo Inversión
 function fireYTDAportes(){
@@ -3566,7 +3602,10 @@ function renderCeli(){
   const llegada=parseInt($('celi-llegada').value)||2019;
   // Aportes reales a TFSA/CELI desde el sistema de aportes
   const aportesCeli=aportes.filter(a=>a.cuenta==='TFSA/CELI'&&a.tipo==='Inversión');
-  const aportadoTotal=aportesCeli.reduce((s,a)=>s+parseFloat(a.monto),0);
+  const aportadoNuevo=aportesCeli.reduce((s,a)=>s+parseFloat(a.monto),0);
+  // Saldo inicial CELI (lo que ya tenías antes de PHOENIX)
+  const saldoInicialCeli=parseFloat(SALDOS_INICIALES.celi)||0;
+  const aportadoTotal=aportadoNuevo+saldoInicialCeli;
   // Valor real desde Portafolio (si existe)
   const posCeli=posiciones.filter(p=>p.cuenta==='TFSA/CELI');
   const valorPortafolio=posCeli.reduce((s,p)=>s+posValorActual(p),0);
@@ -3604,9 +3643,15 @@ function renderCeli(){
   // Tabla y chart
   updateCeliTable();
   renderCeliEvolChart();
-  // Aportes recientes
+  // Aportes recientes (con saldo inicial si existe)
   const sortedAp=[...aportesCeli].sort((a,b)=>new Date(b.date)-new Date(a.date));
-  $('celi-tx-body').innerHTML=sortedAp.length?sortedAp.map(a=>`<tr><td style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#444">${a.date}</td><td style="color:#4d9fff;font-size:10px">TFSA</td><td style="color:#888;font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.notas||'—'}</td><td style="text-align:right;font-family:'JetBrains Mono',monospace;color:#33aa66">${fmt(a.monto)}</td></tr>`).join(''):'<tr><td colspan="4" style="color:#1a1a2e;padding:12px 0;font-size:9px;text-align:center">SIN APORTES — REGISTRA UNO EN FINTRACK</td></tr>';
+  let bodyHTML='';
+  if(saldoInicialCeli>0){
+    const fechaSI=SALDOS_INICIALES.fecha||'inicio';
+    bodyHTML+=`<tr style="background:#0f0f1a"><td style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#ffaa00">${fechaSI}</td><td style="color:#ffaa00;font-size:10px">🏦 INICIAL</td><td style="color:#888;font-size:10px;font-style:italic">Saldo previo a PHOENIX</td><td style="text-align:right;font-family:'JetBrains Mono',monospace;color:#ffaa00">${fmt(saldoInicialCeli)}</td></tr>`;
+  }
+  bodyHTML+=sortedAp.length?sortedAp.map(a=>`<tr><td style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#444">${a.date}</td><td style="color:#4d9fff;font-size:10px">TFSA</td><td style="color:#888;font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.notas||'—'}</td><td style="text-align:right;font-family:'JetBrains Mono',monospace;color:#33aa66">${fmt(a.monto)}</td></tr>`).join(''):(saldoInicialCeli>0?'':'<tr><td colspan="4" style="color:#1a1a2e;padding:12px 0;font-size:9px;text-align:center">SIN APORTES — REGISTRA UNO EN FINTRACK</td></tr>');
+  $('celi-tx-body').innerHTML=bodyHTML;
 }
 function updateCeliLlegada(){renderCeli()}
 function updateCeliTable(){
@@ -3737,9 +3782,10 @@ function calcEspacioRrsp(){
   // FIX BUG: solo usar histórico si tiene ingresos > 0 (evita inicialización con 0s)
   const historicoYrs=Object.keys(RRSP_HISTORIAL).map(y=>parseInt(y));
   const historicoConIngreso=historicoYrs.filter(y=>parseFloat(RRSP_HISTORIAL[y]?.ingreso)>0);
+  const saldoInicialRrsp=parseFloat(SALDOS_INICIALES.rrsp)||0;
   if(historicoConIngreso.length>0){
     const aportesRrsp=aportes.filter(a=>a.cuenta==='RRSP/REER'&&a.tipo==='Inversión');
-    const aportadoTotal=aportesRrsp.reduce((s,a)=>s+parseFloat(a.monto),0);
+    const aportadoTotal=aportesRrsp.reduce((s,a)=>s+parseFloat(a.monto),0)+saldoInicialRrsp;
     let espacioGenerado=0;
     historicoConIngreso.forEach(y=>{
       const ing=parseFloat(RRSP_HISTORIAL[y]?.ingreso)||0;
@@ -3754,7 +3800,7 @@ function calcEspacioRrsp(){
   const espacioBase=RRSP_CONFIG.espacioNOA||0;
   const espacioNuevo=RRSP_CONFIG.ingresoBruto*0.18;
   const aportesRrsp=aportes.filter(a=>a.cuenta==='RRSP/REER'&&a.tipo==='Inversión');
-  const aportadoTotal=aportesRrsp.reduce((s,a)=>s+parseFloat(a.monto),0);
+  const aportadoTotal=aportesRrsp.reduce((s,a)=>s+parseFloat(a.monto),0)+saldoInicialRrsp;
   return Math.max(espacioBase+espacioNuevo-aportadoTotal,0);
 }
 function renderRrspHistorial(){
@@ -4908,8 +4954,31 @@ function openPerfilModal(){
   $('perfil-fondo-meta').value=APORTE_FIRE.fondoMeta;
   $('perfil-ap-fire').value=APORTE_FIRE.aporteFireFaseA;
   $('perfil-ap-fondo').value=APORTE_FIRE.aporteFondoFaseA;
+  // Saldos iniciales
+  $('perfil-saldo-fondo').value=SALDOS_INICIALES.fondoSeguridad||'';
+  $('perfil-saldo-inv').value=SALDOS_INICIALES.inversionFire||'';
+  $('perfil-saldo-celi').value=SALDOS_INICIALES.celi||'';
+  $('perfil-saldo-rrsp').value=SALDOS_INICIALES.rrsp||'';
+  $('perfil-saldo-fecha').value=SALDOS_INICIALES.fecha||'';
+  $('perfil-saldo-notas').value=SALDOS_INICIALES.notas||'';
   showFaseInfo();
+  showSaldoInfo();
   om('mo-perfil');
+}
+function showSaldoInfo(){
+  const div=$('perfil-saldo-info');
+  if(!div)return;
+  const fondo=parseFloat($('perfil-saldo-fondo').value)||0;
+  const inv=parseFloat($('perfil-saldo-inv').value)||0;
+  const celi=parseFloat($('perfil-saldo-celi').value)||0;
+  const rrsp=parseFloat($('perfil-saldo-rrsp').value)||0;
+  const total=fondo+inv+celi+rrsp;
+  if(total>0){
+    div.style.display='block';
+    div.innerHTML=`💎 <strong>Patrimonio inicial registrado: ${fmt(total)}</strong> · Estos saldos se sumarán a tus aportes para reflejar tu situación real en todos los KPIs.`;
+  }else{
+    div.style.display='none';
+  }
 }
 // Auto-calcular aporte fondo cuando cambia el de FIRE
 function autoCalcAporteFondo(){
@@ -4964,6 +5033,14 @@ async function savePerfil(){
   APORTE_FIRE.aporteFireFaseA=apFire;
   APORTE_FIRE.aporteFondoFaseA=apFondo;
   saveAporteFire();
+  // Saldos iniciales
+  SALDOS_INICIALES.fondoSeguridad=parseFloat($('perfil-saldo-fondo').value)||0;
+  SALDOS_INICIALES.inversionFire=parseFloat($('perfil-saldo-inv').value)||0;
+  SALDOS_INICIALES.celi=parseFloat($('perfil-saldo-celi').value)||0;
+  SALDOS_INICIALES.rrsp=parseFloat($('perfil-saldo-rrsp').value)||0;
+  SALDOS_INICIALES.fecha=$('perfil-saldo-fecha').value||'';
+  SALDOS_INICIALES.notas=$('perfil-saldo-notas').value||'';
+  saveSaldosIniciales();
   // Sync a Sheets
   try{
     await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({_action:'saveUserConfig',userConfig:USER})});
@@ -5130,6 +5207,7 @@ function exportarBackup(){
     timestamp:new Date().toISOString(),
     user:USER,
     aporteFire:APORTE_FIRE,
+    saldosIniciales:SALDOS_INICIALES,
     cats:CATS,
     vasijas:VASIJAS,
     expenses,
@@ -5174,6 +5252,7 @@ function importarBackup(file){
       // Restaurar todo
       if(data.user){USER=data.user;saveUser()}
       if(data.aporteFire){APORTE_FIRE={...APORTE_FIRE_DEFAULT,...data.aporteFire};saveAporteFire()}
+      if(data.saldosIniciales){SALDOS_INICIALES={...SALDOS_INICIALES_DEFAULT,...data.saldosIniciales};saveSaldosIniciales()}
       if(data.cats){CATS=data.cats;saveCatsLocal()}
       if(data.vasijas){VASIJAS=data.vasijas;saveVasijasLocal()}
       if(data.expenses){expenses=data.expenses}
