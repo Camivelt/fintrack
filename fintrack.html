@@ -913,6 +913,7 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
 <div class="page" id="page-fire">
   <div class="fire-subnav">
     <button class="fire-tab active" onclick="switchFireTab('overview',this)">🔥 OVERVIEW</button>
+    <button class="fire-tab" onclick="switchFireTab('patrimonio',this)">💎 PATRIMONIO</button>
     <button class="fire-tab" onclick="switchFireTab('celi',this)">🏦 CELI / TFSA</button>
     <button class="fire-tab" onclick="switchFireTab('rrsp',this)">💰 RRSP / REER</button>
     <button class="fire-tab" onclick="switchFireTab('portafolio',this)">📊 PORTAFOLIO</button>
@@ -1074,6 +1075,84 @@ input[type=range]{flex:1;accent-color:#00ff88;height:3px}
           </div>
           <span style="color:#666">Activo</span>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SUB-PESTAÑA: PATRIMONIO ═══════════ -->
+  <div class="fire-subpage" id="fp-patrimonio">
+    <div class="kpi-row k4">
+      <div class="kpi-card" style="--accent:#00ff88">
+        <div class="kl">💎 Patrimonio TOTAL</div>
+        <div class="kv" id="pt-total">—</div>
+        <div class="ks" id="pt-total-s">Fondo + Inversión + CELI + RRSP</div>
+      </div>
+      <div class="kpi-card" style="--accent:#ffaa00">
+        <div class="kl">🛡️ Total Fondo Seguridad</div>
+        <div class="kv" id="pt-fondo">—</div>
+        <div class="ks" id="pt-fondo-s">Inicial + aportes</div>
+      </div>
+      <div class="kpi-card" style="--accent:#c084fc">
+        <div class="kl">📈 Total Inversiones</div>
+        <div class="kv" id="pt-inv">—</div>
+        <div class="ks" id="pt-inv-s">FIRE + CELI + RRSP</div>
+      </div>
+      <div class="kpi-card" style="--accent:#4d9fff">
+        <div class="kl">📊 Crecimiento total</div>
+        <div class="kv" id="pt-crec">—</div>
+        <div class="ks" id="pt-crec-s">Desde saldo inicial</div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-bottom:14px">
+      <div class="pt">
+        <span>📜 HISTÓRICO DE MOVIMIENTOS DE PATRIMONIO</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select class="fs" id="pt-filtro-tipo" onchange="renderHistorialPatrimonio()" style="width:160px;padding:5px 8px;font-size:11px">
+            <option value="todos">Todos los tipos</option>
+            <option value="Fondo Seguridad">🛡️ Solo Fondo Seguridad</option>
+            <option value="Inversión">📈 Solo Inversiones</option>
+            <option value="inicial">💎 Solo Saldos Iniciales</option>
+          </select>
+          <select class="fs" id="pt-filtro-cuenta" onchange="renderHistorialPatrimonio()" style="width:140px;padding:5px 8px;font-size:11px">
+            <option value="todas">Todas las cuentas</option>
+            <option value="TFSA/CELI">🏦 CELI/TFSA</option>
+            <option value="RRSP/REER">💰 RRSP/REER</option>
+            <option value="EQ Bank">🏛️ EQ Bank</option>
+            <option value="Banco">🏛️ Otro Banco</option>
+            <option value="Otra">Otra cuenta</option>
+          </select>
+        </div>
+      </div>
+      <p style="font-size:11px;color:#666;margin:0 0 10px 0">Histórico cronológico de todos los aportes a tu patrimonio. Incluye saldos iniciales registrados al empezar PHOENIX.</p>
+      <div style="max-height:480px;overflow-y:auto">
+        <table class="tbl" style="font-size:12px">
+          <thead style="position:sticky;top:0;background:#0a0a0f;z-index:1">
+            <tr>
+              <th>Fecha</th>
+              <th>Tipo</th>
+              <th>Cuenta</th>
+              <th>Descripción</th>
+              <th style="text-align:right">Monto</th>
+              <th style="text-align:right">Acum.</th>
+            </tr>
+          </thead>
+          <tbody id="pt-body"></tbody>
+        </table>
+      </div>
+      <div id="pt-totales" style="margin-top:14px;padding:12px;background:#0a0a0f;border:1px solid #1a1a2e;border-radius:6px"></div>
+    </div>
+
+    <div class="g2">
+      <div class="panel">
+        <div class="pt">📊 EVOLUCIÓN MENSUAL DEL PATRIMONIO</div>
+        <p style="font-size:11px;color:#666;margin:0 0 10px 0">Suma acumulada al final de cada mes.</p>
+        <div style="height:300px"><canvas id="pt-chart-mensual"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="pt">🏛️ DISTRIBUCIÓN POR CUENTA</div>
+        <p style="font-size:11px;color:#666;margin:0 0 10px 0">Dónde está guardado tu dinero.</p>
+        <div style="height:300px"><canvas id="pt-chart-cuenta"></canvas></div>
       </div>
     </div>
   </div>
@@ -2395,6 +2474,7 @@ function switchFireTab(tab,btn){
   document.querySelectorAll('.fire-subpage').forEach(p=>p.classList.remove('active'));
   $('fp-'+tab).classList.add('active');
   if(tab==='overview')renderOverview();
+  else if(tab==='patrimonio')renderHistorialPatrimonio();
   else if(tab==='celi')renderCeli();
   else if(tab==='rrsp')renderRRSP();
   else if(tab==='portafolio')renderPortafolio();
@@ -3071,22 +3151,24 @@ function renderKPIs(ts,t,apTotal,apInv,apSeg){
   // KPI 3: Inversión (META = plan FIRE Fase actual)
   const invPlanFire=aporteFireReal();
   const invPct=invPlanFire>0?(apInv/invPlanFire)*100:0;
+  const invTotalAcum=fireCapital(); // Patrimonio total (incluye saldos iniciales)
   $('k-inv').textContent=fmt(apInv);
   const fase=fasePlanFire();
   $('k-inv-lbl').textContent=`Inversión FIRE${fase==='B'?' (Fase B)':''}`;
-  $('k-inv-sub').innerHTML=`Meta ${fmtI(invPlanFire)} · <span style="color:${subColor(invPct,'goal')}">${invPct.toFixed(0)}% cumplido</span>`;
+  $('k-inv-sub').innerHTML=`Meta ${fmtI(invPlanFire)} · <span style="color:${subColor(invPct,'goal')}">${invPct.toFixed(0)}%</span> · Total acum: <strong style="color:#c084fc">${fmtI(invTotalAcum)}</strong>`;
   $('k-inv-bar').style.width=Math.min(invPct,100).toFixed(1)+'%';
   $('k-inv-bar').style.background=barColor(invPct,'goal');
 
   // KPI 4: Fondo Seguridad (META = plan FIRE Fase actual)
   const segPlanFire=aporteFondoReal();
   const segPct=segPlanFire>0?(apSeg/segPlanFire)*100:0;
+  const segTotalAcum=fondoSeguridadActual(); // Total acum (incluye saldo inicial)
   $('k-seg').textContent=fmt(apSeg);
   $('k-seg-lbl').textContent=`Fondo Seguridad${fase==='B'?' ✓ Lleno':''}`;
   if(segPlanFire>0){
-    $('k-seg-sub').innerHTML=`Meta ${fmtI(segPlanFire)} · <span style="color:${subColor(segPct,'goal')}">${segPct.toFixed(0)}% cumplido</span>`;
+    $('k-seg-sub').innerHTML=`Meta ${fmtI(segPlanFire)} · <span style="color:${subColor(segPct,'goal')}">${segPct.toFixed(0)}%</span> · Total acum: <strong style="color:#ffaa00">${fmtI(segTotalAcum)}</strong>`;
   }else{
-    $('k-seg-sub').innerHTML=`<span style="color:#00ff88">🎉 Fondo lleno · todo va a Inversión</span>`;
+    $('k-seg-sub').innerHTML=`<span style="color:#00ff88">🎉 Fondo lleno · ${fmtI(segTotalAcum)} acumulado</span>`;
   }
   $('k-seg-bar').style.width=Math.min(segPct,100).toFixed(1)+'%';
   $('k-seg-bar').style.background=barColor(segPct,'goal');
@@ -3278,6 +3360,226 @@ function renderCatChart(){
   if(charts.cat)charts.cat.destroy();if(!cats.length)return;
   charts.cat=new Chart($('catChart'),{type:'doughnut',data:{labels:cats.map(c=>c.label.substring(0,12)),datasets:[{data:cats.map(c=>parseFloat((t[c.key]||0).toFixed(2))),backgroundColor:cats.map(c=>c.color),borderColor:'#0a0a0f',borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'right',labels:{color:'#555',font:{size:8,family:'JetBrains Mono'},boxWidth:7,padding:4}},tooltip:{callbacks:{label:ctx=>` ${fmt(ctx.raw)}`}}},cutout:'65%'}});
 }
+// ══════════════════════════════════════════
+// 💎 HISTORIAL DE PATRIMONIO
+// ══════════════════════════════════════════
+function renderHistorialPatrimonio(){
+  // Construir lista unificada de "movimientos de patrimonio"
+  const movimientos=[];
+
+  // 1. Saldos iniciales (si existen)
+  const fechaSI=SALDOS_INICIALES.fecha||USER.fechaInicioFire||'2026-05-01';
+  const notasSI=SALDOS_INICIALES.notas||'Saldo previo a PHOENIX';
+  const sFondo=parseFloat(SALDOS_INICIALES.fondoSeguridad)||0;
+  const sInv=parseFloat(SALDOS_INICIALES.inversionFire)||0;
+  const sCeli=parseFloat(SALDOS_INICIALES.celi)||0;
+  const sRrsp=parseFloat(SALDOS_INICIALES.rrsp)||0;
+  if(sFondo>0)movimientos.push({fecha:fechaSI,tipo:'Fondo Seguridad',cuenta:'EQ Bank',desc:notasSI,monto:sFondo,esInicial:true});
+  if(sInv>0)movimientos.push({fecha:fechaSI,tipo:'Inversión',cuenta:'Cuenta Propia',desc:notasSI,monto:sInv,esInicial:true});
+  if(sCeli>0)movimientos.push({fecha:fechaSI,tipo:'Inversión',cuenta:'TFSA/CELI',desc:notasSI+' (CELI)',monto:sCeli,esInicial:true});
+  if(sRrsp>0)movimientos.push({fecha:fechaSI,tipo:'Inversión',cuenta:'RRSP/REER',desc:notasSI+' (RRSP)',monto:sRrsp,esInicial:true});
+
+  // 2. Aportes registrados
+  aportes.forEach(a=>{
+    movimientos.push({
+      fecha:a.date,
+      tipo:a.tipo,
+      cuenta:a.cuenta||'Cuenta Propia',
+      desc:a.notas||'—',
+      monto:parseFloat(a.monto)||0,
+      esInicial:false
+    });
+  });
+
+  // Filtros
+  const filtroTipo=$('pt-filtro-tipo')?.value||'todos';
+  const filtroCuenta=$('pt-filtro-cuenta')?.value||'todas';
+  let filtrados=[...movimientos];
+  if(filtroTipo==='inicial'){
+    filtrados=filtrados.filter(m=>m.esInicial);
+  }else if(filtroTipo!=='todos'){
+    filtrados=filtrados.filter(m=>m.tipo===filtroTipo);
+  }
+  if(filtroCuenta!=='todas'){
+    filtrados=filtrados.filter(m=>m.cuenta===filtroCuenta);
+  }
+
+  // Ordenar por fecha (más antiguo primero para calcular acumulado correctamente)
+  filtrados.sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
+
+  // Calcular acumulado por fila
+  let acum=0;
+  filtrados=filtrados.map(m=>{
+    acum+=m.monto;
+    return {...m,acumulado:acum};
+  });
+
+  // Renderizar tabla (ya con acumulado correcto, mostrar de más reciente a más antiguo)
+  const display=[...filtrados].reverse();
+  if(display.length===0){
+    $('pt-body').innerHTML='<tr><td colspan="6" style="color:#1a1a2e;padding:24px 0;text-align:center;font-family:JetBrains Mono,monospace;font-size:10px">SIN MOVIMIENTOS — Registra saldos iniciales en Mi PHOENIX o haz aportes en FINTRACK</td></tr>';
+  }else{
+    const COLORS_CUENTA={'TFSA/CELI':'#4d9fff','RRSP/REER':'#c084fc','EQ Bank':'#ffaa00','Banco':'#888','Cuenta Propia':'#33aa66','Otra':'#666'};
+    const COLORS_TIPO={'Inversión':'#c084fc','Fondo Seguridad':'#ffaa00'};
+    $('pt-body').innerHTML=display.map(m=>{
+      const ccolor=COLORS_CUENTA[m.cuenta]||'#888';
+      const tcolor=COLORS_TIPO[m.tipo]||'#888';
+      const bgRow=m.esInicial?'background:#ffaa0008':'';
+      const emoji=m.esInicial?'💎 ':'';
+      return`<tr style="${bgRow}">
+        <td style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#666">${m.fecha}</td>
+        <td><span class="pill" style="background:${tcolor}18;color:${tcolor};border:1px solid ${tcolor}35;font-size:9px">${emoji}${m.tipo.substring(0,12).toUpperCase()}</span></td>
+        <td><span style="color:${ccolor};font-size:10px;font-family:'JetBrains Mono',monospace">${m.cuenta}</span></td>
+        <td style="color:#aaa;font-size:11px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${m.desc}">${m.desc}</td>
+        <td style="text-align:right;font-family:'JetBrains Mono',monospace;color:${m.esInicial?'#ffaa00':'#33aa66'};font-weight:700">+${fmt(m.monto)}</td>
+        <td style="text-align:right;font-family:'JetBrains Mono',monospace;color:#00ff88;font-size:11px">${fmt(m.acumulado)}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Totales por categoría
+  const totFondo=fondoSeguridadActual();
+  const totInvTotal=fireCapital();
+  const totCeli=celiCapital();
+  const totRrsp=rrspCapital();
+  // Inversión NO CELI ni RRSP (cuenta propia)
+  const totInvPropia=Math.max(totInvTotal-totCeli-totRrsp,0);
+  const patrimonioTotal=totFondo+totInvTotal;
+
+  $('pt-totales').innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:12px">
+      <div style="text-align:center">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">🛡️ Fondo Seguridad</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:#ffaa00">${fmt(totFondo)}</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">🏦 CELI/TFSA</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:#4d9fff">${fmt(totCeli)}</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">💰 RRSP/REER</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:#c084fc">${fmt(totRrsp)}</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">📈 Inv. propia</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:#33aa66">${fmt(totInvPropia)}</div>
+      </div>
+    </div>
+    <div style="border-top:1px solid #1a1a2e;padding-top:12px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#888;letter-spacing:2px;text-transform:uppercase">💎 Patrimonio Total</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;color:#00ff88">${fmt(patrimonioTotal)}</span>
+    </div>
+  `;
+
+  // KPIs superiores
+  $('pt-total').textContent=fmt(patrimonioTotal);
+  $('pt-fondo').textContent=fmt(totFondo);
+  $('pt-fondo-s').textContent=`Inicial: ${fmtI(sFondo)} · Aportes: ${fmtI(totFondo-sFondo)}`;
+  $('pt-inv').textContent=fmt(totInvTotal);
+  $('pt-inv-s').textContent=`CELI: ${fmtI(totCeli)} · RRSP: ${fmtI(totRrsp)} · Propia: ${fmtI(totInvPropia)}`;
+  const inicialTotal=sFondo+sInv+sCeli+sRrsp;
+  const crecimiento=patrimonioTotal-inicialTotal;
+  const crecPct=inicialTotal>0?(crecimiento/inicialTotal*100):0;
+  $('pt-crec').textContent=fmt(crecimiento);
+  $('pt-crec-s').innerHTML=inicialTotal>0?`Desde ${fmtI(inicialTotal)} inicial · <span style="color:${crecimiento>=0?'#00ff88':'#ff4d4d'}">+${crecPct.toFixed(1)}%</span>`:`Sin saldo inicial registrado`;
+
+  // Charts
+  renderChartPatrimonioMensual(filtrados);
+  renderChartPatrimonioCuenta();
+}
+
+function renderChartPatrimonioMensual(movimientos){
+  const canvas=$('pt-chart-mensual');
+  if(!canvas)return;
+  if(charts.ptMensual)charts.ptMensual.destroy();
+  if(movimientos.length===0)return;
+  // Agrupar por mes
+  const porMes={};
+  movimientos.forEach(m=>{
+    const k=mkKey(m.fecha);
+    porMes[k]=(porMes[k]||0)+m.monto;
+  });
+  const meses=Object.keys(porMes).sort();
+  if(meses.length===0)return;
+  // Acumulado
+  let acum=0;
+  const acumData=meses.map(m=>{acum+=porMes[m];return acum});
+  const labels=meses.map(m=>mkLbl(m));
+  charts.ptMensual=new Chart(canvas,{
+    type:'line',
+    data:{
+      labels,
+      datasets:[{
+        label:'Patrimonio acumulado',
+        data:acumData,
+        borderColor:'#00ff88',
+        backgroundColor:'#00ff8820',
+        fill:true,
+        tension:0.4,
+        pointBackgroundColor:'#00ff88',
+        pointRadius:5,
+        borderWidth:2
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${fmt(ctx.raw)}`}}},
+      scales:{
+        x:{ticks:{color:'#666',font:{size:10}},grid:{color:'#1a1a2e'}},
+        y:{ticks:{color:'#666',font:{size:10},callback:v=>'$'+v.toLocaleString()},grid:{color:'#1a1a2e'},beginAtZero:true}
+      }
+    }
+  });
+}
+
+function renderChartPatrimonioCuenta(){
+  const canvas=$('pt-chart-cuenta');
+  if(!canvas)return;
+  if(charts.ptCuenta)charts.ptCuenta.destroy();
+  // Calcular totales por cuenta
+  const sFondo=parseFloat(SALDOS_INICIALES.fondoSeguridad)||0;
+  const sInv=parseFloat(SALDOS_INICIALES.inversionFire)||0;
+  const sCeli=parseFloat(SALDOS_INICIALES.celi)||0;
+  const sRrsp=parseFloat(SALDOS_INICIALES.rrsp)||0;
+  // Cuentas detectadas en aportes
+  const porCuenta={
+    'EQ Bank (Fondo)':sFondo,
+    'CELI/TFSA':sCeli,
+    'RRSP/REER':sRrsp,
+    'Cuenta Propia':sInv
+  };
+  aportes.forEach(a=>{
+    const cuenta=a.cuenta||'Cuenta Propia';
+    let key=cuenta;
+    if(a.tipo==='Fondo Seguridad')key='EQ Bank (Fondo)';
+    porCuenta[key]=(porCuenta[key]||0)+(parseFloat(a.monto)||0);
+  });
+  // Filtrar los que tienen valor > 0
+  const entradas=Object.entries(porCuenta).filter(([,v])=>v>0);
+  if(entradas.length===0)return;
+  const COLORS={'EQ Bank (Fondo)':'#ffaa00','CELI/TFSA':'#4d9fff','RRSP/REER':'#c084fc','Cuenta Propia':'#33aa66','Banco':'#888'};
+  charts.ptCuenta=new Chart(canvas,{
+    type:'doughnut',
+    data:{
+      labels:entradas.map(([k])=>k),
+      datasets:[{
+        data:entradas.map(([,v])=>v),
+        backgroundColor:entradas.map(([k])=>COLORS[k]||'#888'),
+        borderColor:'#0a0a0f',
+        borderWidth:3
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true,position:'right',labels:{color:'#888',font:{size:11},boxWidth:12,padding:8}},
+        tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${fmt(ctx.raw)}`}}
+      },
+      cutout:'60%'
+    }
+  });
+}
+
 function renderTrendChart(){
   if(charts.trend)charts.trend.destroy();
   let lb=[],dt=[],lbl='';
@@ -3292,8 +3594,9 @@ function renderTrendChart(){
 // ══════════════════════════════════════════
 function renderFireAll(){
   const activeTab=document.querySelector('.fire-tab.active');
-  const tab=activeTab?activeTab.textContent.includes('CELI')?'celi':activeTab.textContent.includes('RRSP')?'rrsp':activeTab.textContent.includes('PORT')?'portafolio':activeTab.textContent.includes('PROY')?'proyeccion':activeTab.textContent.includes('SEG')?'seguimiento':'overview':'overview';
+  const tab=activeTab?activeTab.textContent.includes('PATRIMONIO')?'patrimonio':activeTab.textContent.includes('CELI')?'celi':activeTab.textContent.includes('RRSP')?'rrsp':activeTab.textContent.includes('PORT')?'portafolio':activeTab.textContent.includes('PROY')?'proyeccion':activeTab.textContent.includes('SEG')?'seguimiento':'overview':'overview';
   if(tab==='overview')renderOverview();
+  else if(tab==='patrimonio')renderHistorialPatrimonio();
   else if(tab==='celi')renderCeli();
   else if(tab==='rrsp')renderRRSP();
   else if(tab==='portafolio')renderPortafolio();
@@ -3303,21 +3606,24 @@ function renderFireAll(){
 }
 function renderOverview(){
   // ── Datos: 3 fuentes de patrimonio con prioridad ──
-  const aportadoTotal=fireCapital();              // Suma de aportes Inversión históricos
+  const aportadoTotal=fireCapital();              // Suma de aportes Inversión históricos + saldo inicial Inv
   const lastPat=lastSegPat();                     // Último valor real registrado en Seguimiento
   const lastMes=lastSegMes();
   const portafolioVal=portafolioTotal();          // Suma de valor actual de posiciones
   const portafolioCosto=portafolioCostoTotal();   // Suma del costo total invertido
+  // Saldo inicial inversión (ya está incluido en fireCapital, pero se necesita por separado para portafolio/seguimiento)
+  const saldoInicialInv=parseFloat(SALDOS_INICIALES.inversionFire)||0;
   // Prioridad: Portafolio > Seguimiento > Aportes
+  // IMPORTANTE: portafolio y seguimiento también deben sumar saldo inicial inversión
   let cap, fuente;
   if(portafolioVal>0){
-    cap=portafolioVal;
+    cap=portafolioVal+saldoInicialInv;
     fuente='portafolio';
   }else if(lastPat!==null){
-    cap=lastPat;
+    cap=lastPat+saldoInicialInv;
     fuente='seguimiento';
   }else{
-    cap=aportadoTotal;
+    cap=aportadoTotal; // fireCapital() ya suma saldo inicial
     fuente='aportes';
   }
   // Rendimiento real depende de la fuente
@@ -5051,6 +5357,9 @@ async function savePerfil(){
   renderAll();
   renderOverview();
   renderProyeccion();
+  if(typeof renderCeli==='function'&&$('fp-celi'))renderCeli();
+  if(typeof renderRRSP==='function'&&$('fp-rrsp'))renderRRSP();
+  if(typeof renderHistorialPatrimonio==='function')renderHistorialPatrimonio();
   toast(`Perfil actualizado, ${USER.nombre.split(' ').pop()} ✓`,'ok');
 }
 function getSaludoDelMomento(){
