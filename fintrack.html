@@ -2238,7 +2238,43 @@ function loadCatsAndVasijas(){
   saveCatsLocal();
   saveVasijasLocal();
 }
-function saveCatsLocal(){localStorage.setItem('ft_cats',JSON.stringify(CATS))}
+function saveCatsLocal(){
+  localStorage.setItem('ft_cats',JSON.stringify(CATS));
+  // 🛡️ BACKUP AUTOMÁTICO: snapshot de los últimos 5 estados
+  try{
+    const backups = JSON.parse(localStorage.getItem('ft_cats_backups')||'[]');
+    backups.unshift({
+      timestamp: new Date().toISOString(),
+      count: CATS.length,
+      cats: CATS
+    });
+    localStorage.setItem('ft_cats_backups', JSON.stringify(backups.slice(0, 5)));
+  }catch(e){console.warn('[BACKUP] Error:', e)}
+}
+
+// 🛡️ Recuperación manual desde consola
+function listCatsBackups(){
+  const backups = JSON.parse(localStorage.getItem('ft_cats_backups')||'[]');
+  console.log('═══ BACKUPS DE CATEGORÍAS ═══');
+  backups.forEach((b,i)=>{
+    console.log(i + ': ' + b.timestamp + ' → ' + b.count + ' categorías');
+    console.log('   ' + b.cats.map(c=>c.label).join(', '));
+  });
+  return backups;
+}
+function restoreCatsBackup(index){
+  const backups = JSON.parse(localStorage.getItem('ft_cats_backups')||'[]');
+  if(!backups[index]){console.error('Backup no existe');return false}
+  const restored = backups[index];
+  if(!confirm('¿Restaurar backup del ' + restored.timestamp + ' con ' + restored.count + ' categorías?'))return false;
+  CATS = restored.cats;
+  saveCatsLocal();
+  syncCatsToSheets();
+  buildSel();
+  renderAll();
+  console.log('✓ Categorías restauradas');
+  return true;
+}
 function saveVasijasLocal(){localStorage.setItem('ft_vasijas',JSON.stringify(VASIJAS))}
 
 // Deduplicar categorías por key (conserva la primera, fusiona presupuestos si difieren)
@@ -2326,11 +2362,38 @@ function migrateCatsVigencia(){
 }
 
 // Sync con Sheets
-async function syncCatsToSheets(){
-  try{
-    await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({_action:'saveCats',cats:CATS,vasijas:VASIJAS})});
-    setSS('ok');
-  }catch(e){setSS('err')}
+async function syncCatsToSheets(retries=2){
+  // 🛡️ Sync ROBUSTO con reintentos automáticos
+  const syncTime = new Date().toISOString();
+  localStorage.setItem('ft_cats_last_sync_attempt', syncTime);
+  for(let attempt=0; attempt<=retries; attempt++){
+    try{
+      await fetch(SHEETS_URL,{
+        method:'POST',
+        mode:'no-cors',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({_action:'saveCats',cats:CATS,vasijas:VASIJAS,_syncTime:syncTime})
+      });
+      localStorage.setItem('ft_cats_last_sync_ok', syncTime);
+      setSS('ok');
+      if(attempt>0) console.log('[SYNC] Categorías sincronizadas en intento ' + (attempt+1));
+      return true;
+    }catch(e){
+      console.warn('[SYNC] Intento ' + (attempt+1) + '/' + (retries+1) + ' falló:', e);
+      if(attempt < retries){
+        // Backoff progresivo: 1s, 2s, 3s
+        await new Promise(r=>setTimeout(r, 1000 * (attempt+1)));
+      }else{
+        setSS('err');
+        console.error('[SYNC] FALLO TOTAL. Cambios guardados solo local.');
+        if(typeof toast==='function'){
+          toast('⚠️ Sync falló — datos guardados localmente','warn');
+        }
+        return false;
+      }
+    }
+  }
+  return false;
 }
 
 // ══════════════════════════════════════════
@@ -2341,7 +2404,35 @@ async function loadSheets(){
     const r=await fetch(SHEETS_URL),j=await r.json();
     if(j.data) expenses=j.data.filter(r=>r.Fecha&&r.Monto&&r['Categoría']).map(r=>({date:r.Fecha,desc:r['Descripción'],cat:r['Categoría'],amount:parseFloat(r.Monto),id:r.Fecha+'_'+r.Monto}));
     // Si Sheets envía categorías y vasijas, prefiérelas (sync remoto)
-    if(j.cats && Array.isArray(j.cats) && j.cats.length){CATS=j.cats;saveCatsLocal()}
+    // Si Sheets envía categorías — FUSIÓN INTELIGENTE (no sobrescribir local)
+    if(j.cats && Array.isArray(j.cats) && j.cats.length){
+      // 🛡️ PROTECCIÓN CRÍTICA contra pérdida de categorías
+      // Compara local vs Sheets. Si local tiene categorías que Sheets no tiene,
+      // significa que Sheets está desactualizado → fusionar (no reemplazar)
+      const localKeys = new Set(CATS.map(c=>c.key));
+      const sheetsKeys = new Set(j.cats.map(c=>c.key));
+      const localOnly = [...localKeys].filter(k=>!sheetsKeys.has(k));
+      const sheetsOnly = [...sheetsKeys].filter(k=>!localKeys.has(k));
+      
+      if(localOnly.length > 0){
+        // Local tiene categorías exclusivas → preservar local + agregar nuevas de Sheets
+        console.warn('[PROTECCIÓN] Sheets está desactualizado. Fusionando.');
+        console.log('Local-only preservadas (' + localOnly.length + '):', localOnly);
+        console.log('Sheets-only agregadas (' + sheetsOnly.length + '):', sheetsOnly);
+        const fusion = [...CATS];
+        j.cats.forEach(sCat=>{
+          if(!localKeys.has(sCat.key)) fusion.push(sCat);
+        });
+        CATS = fusion;
+        saveCatsLocal();
+        // Re-sincronizar Sheets con la fusión (en background)
+        setTimeout(()=>syncCatsToSheets(), 500);
+      } else {
+        // Local no tiene exclusivas → seguro reemplazar con Sheets
+        CATS = j.cats;
+        saveCatsLocal();
+      }
+    }
     if(j.vasijas && Array.isArray(j.vasijas) && j.vasijas.length===4){VASIJAS=j.vasijas;saveVasijasLocal()}
     // Aportes
     if(j.aportes && Array.isArray(j.aportes)){
